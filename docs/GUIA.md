@@ -32,7 +32,19 @@ demo-target and fix anything until all tests pass.
 ```
 
 ## TAREA 2 — Servidor MCP · modo Plan → Agent · 📸 `02-mcp-server.png`
-(Claude te lo dará cuando termine la Tarea 1)
+En modo **Plan**:
+```
+Read docs/PRD.md section 3.1. Plan a Node 20 + TypeScript MCP server in mcp-server/ using the official
+@modelcontextprotocol/sdk (stdio transport) exposing exactly 4 tools: osv_lookup, find_usages,
+fetch_changelog, run_checks, with the contracts in the PRD. find_usages must parse JS/TS with a real
+parser (@babel/parser), not regex, and report every member used on the package objects (for express:
+app.del, req.param, res.send, res.json, res.redirect, router.get paths, etc.). run_checks must run
+jest with --json in the given folder and return structured failures. Include unit tests for each tool
+(use demo-target/ as a fixture for find_usages), an npm "build" script, and a README with the IBM Bob
+MCP config snippet to register it.
+```
+Cuando enseñe el plan → cambiar a **Agent** →
+`Implement the plan. Run npm install, the build and the tests until everything passes.`
 
 ## TAREA 3 — Skills · 📸 `03-skills.png`
 ## TAREA 4 — Modo 🩹 Mergeable · 📸 `04-mode.png`
