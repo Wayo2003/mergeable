@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mergeable — Dependabot opens the PR. Mergeable makes it mergeable.</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #070913;
+  --surface: #0e1326;
+  --surface-card: #141b34;
+  --border: #212c4f;
+  --border-hover: #33447a;
+  --text: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --accent-text: #60a5fa;
+  --green: #10b981;
+  --green-bg: rgba(16, 185, 129, 0.08);
+  --green-bd: rgba(16, 185, 129, 0.25);
+  --green-text: #34d399;
+  --red: #ef4444;
+  --red-bg: rgba(239, 68, 68, 0.08);
+  --red-bd: rgba(239, 68, 68, 0.25);
+  --red-text: #f87171;
+  --yellow: #f59e0b;
+  --yellow-bg: rgba(245, 158, 11, 0.08);
+  --yellow-bd: rgba(245, 158, 11, 0.25);
+  --yellow-text: #fbbf24;
+  --purple: #8b5cf6;
+  --purple-bg: rgba(139, 92, 246, 0.08);
+  --purple-bd: rgba(139, 92, 246, 0.25);
+  --purple-text: #a78bfa;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --max-width: 900px;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Nav ─────────────────────────────────────────────────────── */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(7, 9, 19, 0.88);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nav-brand {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.02em;
+}
+.nav-brand span { color: var(--accent-text); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
+  padding: 80px 24px 72px;
+  text-align: center;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  border: 1px solid var(--accent-glow);
+  background: var(--accent-glow);
+  border-radius: 99px;
+  padding: 4px 14px;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: clamp(26px, 4.5vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 18px;
+}
+.hero h1 em {
+  font-style: normal;
+  color: var(--accent-text);
+}
+.hero-sub {
+  font-size: 17px;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto 36px;
+}
+.hero-cta {
+  display: inline-flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.btn {
+  display: inline-block;
+  padding: 11px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.15s;
+  cursor: pointer;
+}
+.btn:hover { opacity: 0.88; transform: translateY(-1px); text-decoration: none; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-outline { border: 1px solid var(--border-hover); color: var(--text); background: transparent; }
+
+/* ── Section shared ──────────────────────────────────────────── */
+section { padding: 64px 0; border-top: 1px solid var(--border); }
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  margin-bottom: 8px;
+}
+.section-title {
+  font-size: clamp(20px, 3vw, 28px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  margin-bottom: 36px;
+}
+
+/* ── Problem bullets ─────────────────────────────────────────── */
+.problem-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.problem-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 22px 24px;
+}
+.problem-icon {
+  font-size: 22px;
+  margin-bottom: 10px;
+  line-height: 1;
+}
+.problem-card h3 {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.problem-card p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
+/* ── How it works ────────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; gap: 12px; }
+.step {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 16px;
+  align-items: start;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+}
+.step-num {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-body h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.step-body p { font-size: 13px; color: var(--text-muted); }
+.step-feature {
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 99px;
+  align-self: flex-start;
+}
+.feat-mcp   { background: var(--purple-bg); border: 1px solid var(--purple-bd); color: var(--purple-text); }
+.feat-skill { background: var(--yellow-bg); border: 1px solid var(--yellow-bd); color: var(--yellow-text); }
+.feat-agent { background: var(--green-bg);  border: 1px solid var(--green-bd);  color: var(--green-text); }
+.feat-mode  { background: var(--accent-glow); border: 1px solid rgba(59,130,246,0.3); color: var(--accent-text); }
+
+/* ── Real run ────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 32px;
+}
+.stat-card {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px 16px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.stat-green { color: var(--green-text); }
+.stat-red   { color: var(--red-text); }
+.stat-blue  { color: var(--accent-text); }
+.stat-purple{ color: var(--purple-text); }
+
+.run-meta {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.run-meta span { display: flex; align-items: center; gap: 6px; }
+.run-meta code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--text);
+}
+
+.dossier-cta {
+  text-align: center;
+  padding: 28px 24px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.dossier-cta p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.btn-big {
+  padding: 14px 32px;
+  font-size: 15px;
+  border-radius: var(--radius-md);
+}
+
+/* ── Architecture ────────────────────────────────────────────── */
+.arch-wrap {
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  overflow-x: auto;
+  text-align: center;
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+footer a { color: var(--accent-text); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 600px) {
+  .step { grid-template-columns: 32px 1fr; }
+  .step-feature { grid-column: 2; }
+  .nav-links { display: none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#">🩹 <span>Mergeable</span></a>
+    <div class="nav-links">
+      <a href="#problem">Problem</a>
+      <a href="#how">How it works</a>
+      <a href="#run">Real run</a>
+      <a href="#arch">Architecture</a>
+      <a href="https://github.com/Wayo2003/mergeable">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-eyebrow">IBM Bob 2.0 · Agentic workflow</div>
+  <h1>Dependabot opens the PR.<br><em>Mergeable makes it mergeable.</em></h1>
+  <p class="hero-sub">
+    A custom Bob mode that triages CVEs, reads migration guides, fixes every breaking call site in parallel, verifies with tests, and hands you a signed-off Upgrade Dossier — all before a human reviews.
+  </p>
+  <div class="hero-cta">
+    <a class="btn btn-primary btn-big" href="#run">See a real run</a>
+    <a class="btn btn-outline" href="https://github.com/Wayo2003/mergeable">View on GitHub</a>
+  </div>
+</div>
+
+<!-- ── Problem ───────────────────────────────────────────────── -->
+<section id="problem">
+  <div class="container">
+    <div class="section-label">The problem</div>
+    <div class="section-title">Dependency PRs that never land</div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="problem-icon">🔴</div>
+        <h3>CVEs pile up silently</h3>
+        <p>Dependabot raises the alert but can't understand whether your code actually reaches the vulnerable path — so engineers ignore or manually triage each one.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">💥</div>
+        <h3>Breaking changes break CI</h3>
+        <p>Major-version bumps introduce renamed methods, removed helpers, and changed signatures. A plain version bump kills the test suite and the PR rots.</p>
+      </div>
+      <div class="problem-card">
+        <div class="problem-icon">🕒</div>
+        <h3>Fixing it is tedious, not hard</h3>
+        <p>Finding 20 call sites, reading the migration guide, applying each recipe, re-running tests — mechanical work that takes a senior engineer half a day.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ──────────────────────────────────────────── -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">How it works</div>
+    <div class="section-title">Seven steps, fully automated</div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-body">
+          <h3>Triage via MCP + OSV</h3>
+          <p>Queries the OSV vulnerability database for the current and target versions, maps every import and member usage in the project, and writes a structured <code>triage.json</code> with the exposure verdict.</p>
+        </div>
+        <span class="step-feature feat-mcp">MCP tools: osv_lookup · find_usages</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-body">
+          <h3>Read the migration guide PDF</h3>
+          <p>Opens the official migration PDF (or changelog), extracts every breaking change relevant to the actual usage map, and stores them as machine-readable <code>breaking-changes.json</code>.</p>
+        </div>
+        <span class="step-feature feat-skill">Skill: breaking-change-extractor</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-body">
+          <h3>Plan</h3>
+          <p>Installs the target version, captures the failing test baseline, then writes a <code>plan.md</code> mapping each breaking change to the exact file and line it affects, with a risk level and fix recipe.</p>
+        </div>
+        <span class="step-feature feat-mcp">MCP tool: run_checks · fetch_changelog</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-body">
+          <h3>Parallel subagents fix</h3>
+          <p>Spawns one independent subagent per file group. Each agent applies only its own fixes in isolation — no shared state, no merge conflicts. All agents run concurrently.</p>
+        </div>
+        <span class="step-feature feat-agent">Bob: spawn_subagent (parallel)</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-body">
+          <h3>Verify with rollback</h3>
+          <p>Runs the full test suite. Failing file groups are retried once. Any group that still fails is reverted and flagged as residual risk — ensuring the final branch is always green or explicitly documented.</p>
+        </div>
+        <span class="step-feature feat-mcp">MCP tool: run_checks</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">06</div>
+        <div class="step-body">
+          <h3>Upgrade Dossier</h3>
+          <p>Generates a self-contained <code>dossier.html</code> and <code>pr-body.md</code> from real measured data — CVEs closed, tests before/after, diff, risk summary — ready to attach to the PR.</p>
+        </div>
+        <span class="step-feature feat-skill">Skill: upgrade-dossier</span>
+      </div>
+
+      <div class="step">
+        <div class="step-num">07</div>
+        <div class="step-body">
+          <h3>Human gate</h3>
+          <p>Presents the full summary and waits. Nothing is committed until a human types <code>approve</code>. Typing <code>reject</code> discards all code changes while preserving all run artefacts.</p>
+        </div>
+        <span class="step-feature feat-mode">Bob: custom mode gate</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Real run ───────────────────────────────────────────────── -->
+<section id="run">
+  <div class="container">
+    <div class="section-label">Real run</div>
+    <div class="section-title">express 4.17.1 → 5.1.0</div>
+
+    <div class="run-meta">
+      <span>Package <code>express</code></span>
+      <span>From <code>4.17.1</code> → <code>5.1.0</code></span>
+      <span>Run ID <code>20260926-154709</code></span>
+      <span>Duration <code>9m 37s</code></span>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value stat-green">2</div>
+        <div class="stat-label">CVEs closed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-blue">9</div>
+        <div class="stat-label">Breaking changes extracted</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-purple">20</div>
+        <div class="stat-label">Call sites fixed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-blue">3</div>
+        <div class="stat-label">Files changed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-red">0</div>
+        <div class="stat-label">Tests passing before</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value stat-green">33</div>
+        <div class="stat-label">Tests passing after</div>
+      </div>
+    </div>
+
+    <div class="dossier-cta">
+      <p>Full evidence: CVE details, test diff, patch, risk table, and PR body — all in one self-contained file.</p>
+      <a class="btn btn-primary btn-big" href="example-run/dossier.html">Open the real Upgrade Dossier</a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Architecture ──────────────────────────────────────────── -->
+<section id="arch">
+  <div class="container">
+    <div class="section-label">Architecture</div>
+    <div class="section-title">How the pieces fit together</div>
+    <div class="arch-wrap">
+      <svg viewBox="0 0 820 320" width="100%" style="max-width:820px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+
+        <!-- Bob custom mode box -->
+        <rect x="20" y="110" width="150" height="100" rx="10" fill="#141b34" stroke="#33447a" stroke-width="1.5"/>
+        <text x="95" y="148" text-anchor="middle" font-size="13" font-weight="700" fill="#f1f5f9">Bob</text>
+        <text x="95" y="166" text-anchor="middle" font-size="11" fill="#94a3b8">Custom Mode</text>
+        <text x="95" y="181" text-anchor="middle" font-size="10" fill="#60a5fa">🩹 Mergeable</text>
+        <text x="95" y="197" text-anchor="middle" font-size="10" fill="#a78bfa">+ Skills</text>
+
+        <!-- Arrow: mode -> MCP -->
+        <line x1="170" y1="160" x2="220" y2="160" stroke="#33447a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- MCP server box -->
+        <rect x="220" y="90" width="180" height="140" rx="10" fill="#141b34" stroke="#7c3aed" stroke-width="1.5"/>
+        <text x="310" y="118" text-anchor="middle" font-size="12" font-weight="700" fill="#f1f5f9">MCP Server</text>
+        <text x="310" y="134" text-anchor="middle" font-size="10" fill="#94a3b8">mergeable-mcp</text>
+        <rect x="234" y="143" width="152" height="20" rx="4" fill="#1b2548"/>
+        <text x="310" y="157" text-anchor="middle" font-size="10" fill="#a78bfa">osv_lookup</text>
+        <rect x="234" y="167" width="152" height="20" rx="4" fill="#1b2548"/>
+        <text x="310" y="181" text-anchor="middle" font-size="10" fill="#a78bfa">find_usages</text>
+        <rect x="234" y="191" width="152" height="20" rx="4" fill="#1b2548"/>
+        <text x="310" y="205" text-anchor="middle" font-size="10" fill="#a78bfa">fetch_changelog · run_checks</text>
+
+        <!-- Arrow: MCP -> subagents -->
+        <line x1="400" y1="160" x2="450" y2="160" stroke="#33447a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Subagents box -->
+        <rect x="450" y="80" width="160" height="160" rx="10" fill="#141b34" stroke="#10b981" stroke-width="1.5"/>
+        <text x="530" y="108" text-anchor="middle" font-size="12" font-weight="700" fill="#f1f5f9">Subagents</text>
+        <text x="530" y="124" text-anchor="middle" font-size="10" fill="#94a3b8">parallel, isolated</text>
+        <rect x="464" y="133" width="132" height="18" rx="4" fill="#0e2a1e"/>
+        <text x="530" y="146" text-anchor="middle" font-size="10" fill="#34d399">agent: app.js</text>
+        <rect x="464" y="155" width="132" height="18" rx="4" fill="#0e2a1e"/>
+        <text x="530" y="168" text-anchor="middle" font-size="10" fill="#34d399">agent: routes/admin.js</text>
+        <rect x="464" y="177" width="132" height="18" rx="4" fill="#0e2a1e"/>
+        <text x="530" y="190" text-anchor="middle" font-size="10" fill="#34d399">agent: routes/tasks.js</text>
+        <rect x="464" y="199" width="132" height="18" rx="4" fill="#0e2a1e"/>
+        <text x="530" y="212" text-anchor="middle" font-size="10" fill="#34d399">agent: routes/auth.js</text>
+
+        <!-- Arrow: subagents -> dossier -->
+        <line x1="610" y1="160" x2="660" y2="160" stroke="#33447a" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Dossier box -->
+        <rect x="660" y="100" width="140" height="120" rx="10" fill="#141b34" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="730" y="130" text-anchor="middle" font-size="12" font-weight="700" fill="#f1f5f9">Output</text>
+        <text x="730" y="150" text-anchor="middle" font-size="10" fill="#fbbf24">dossier.html</text>
+        <text x="730" y="166" text-anchor="middle" font-size="10" fill="#fbbf24">pr-body.md</text>
+        <text x="730" y="182" text-anchor="middle" font-size="10" fill="#fbbf24">diff.patch</text>
+        <text x="730" y="198" text-anchor="middle" font-size="10" fill="#94a3b8">↳ human gate</text>
+
+        <!-- Labels above arrows -->
+        <text x="192" y="150" text-anchor="middle" font-size="9" fill="#60a5fa">tools</text>
+        <text x="424" y="150" text-anchor="middle" font-size="9" fill="#60a5fa">plan</text>
+        <text x="634" y="150" text-anchor="middle" font-size="9" fill="#60a5fa">fixes</text>
+
+        <!-- Arrow marker -->
+        <defs>
+          <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+            <path d="M1,1 L6,3.5 L1,6" fill="none" stroke="#33447a" stroke-width="1.2"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────── -->
+<footer>
+  <div>
+    Built with <strong>IBM Bob 2.0</strong> ·
+    <a href="https://github.com/Wayo2003/mergeable">github.com/Wayo2003/mergeable</a>
+  </div>
+</footer>
+
+</body>
+</html>

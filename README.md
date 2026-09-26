@@ -1,4 +1,4 @@
-# Mergeable
+﻿# Mergeable
 
 > **Dependabot opens the PR. Mergeable makes it mergeable.**
 
@@ -99,21 +99,69 @@ realistic end-to-end demonstration.
 
 ---
 
+## CI / GitHub Actions
+
+The workflow in `.github/workflows/mergeable.yml` runs automatically on every pull request
+opened or updated by `dependabot[bot]`, and can also be triggered manually via the
+**Actions → Mergeable → Run workflow** button.
+
+### What the workflow does
+
+| Step | Description |
+|---|---|
+| Checkout | Checks out the repository |
+| Node 20 | Sets up Node.js 20 with npm cache |
+| `npm ci` | Installs dependencies in both `demo-target/` and `mcp-server/` |
+| Build MCP server | Compiles TypeScript (`npm run build` in `mcp-server/`) |
+| Install Bob Shell | `curl -fsSL https://bob.ibm.com/download/bobshell.sh | bash` |
+| Run Mergeable | `bob run --mode mergeable --format json --max-turns 80 "Make this dependency PR mergeable"` |
+| Upload artefacts | Uploads the entire `.mergeable/runs/` folder as a workflow artefact |
+| PR comment | Posts the contents of `pr-body.md` as a comment on the pull request |
+
+### Required secrets
+
+Add the following secret in **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|---|---|
+| `BOB_API_KEY` | IBM Bob 2.0 API key. Obtain from your Bob account settings. |
+
+### Running locally (without CI)
+
+```bash
+# 1. Build the MCP server
+cd mcp-server && npm install && npm run build && cd ..
+
+# 2. Install demo-target dependencies
+cd demo-target && npm install && cd ..
+
+# 3. Switch to the Mergeable mode in Bob and run the workflow
+bob run --mode mergeable --max-turns 80 "Upgrade express from 4.17.1 to 5.1.0"
+```
+
+Bob will write all artefacts to `.mergeable/runs/<YYYYMMDD-HHmmss>/`.
+
+---
+
 ## Project structure
 
 ```
 .
 ├── .bob/
 │   ├── custom_modes.yaml          # "🩹 Mergeable" mode definition
-│   ├── mcp.json                   # MCP server registration
+│   ├── mcp.json                   # MCP server registration (relative path, portable)
 │   ├── rules-mergeable/           # Step-by-step operating procedures (01–07)
 │   └── skills/
 │       ├── breaking-change-extractor/   # changelog -> breaking-changes.json
 │       └── upgrade-dossier/             # run folder -> dossier.html + pr-body.md
 ├── mcp-server/                    # TypeScript MCP server
 │   └── tools: osv_lookup, find_usages, fetch_changelog, run_checks
-├── .github/workflows/mergeable.yml
+├── .github/
+│   └── workflows/
+│       └── mergeable.yml          # CI workflow (Dependabot PRs + manual trigger)
 ├── demo-target/                   # Sample Express 4 app for demo runs
 └── docs/
+    ├── index.html                 # Landing page
+    ├── example-run/               # Real run artefacts (express 4.17.1 → 5.1.0)
     └── PRD.md
 ```
