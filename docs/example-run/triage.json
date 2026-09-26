@@ -1,0 +1,68 @@
+{
+  "runId": "20260926-154709",
+  "startedAt": "2026-09-26T15:47:09Z",
+  "finishedAt": "2026-09-26T15:56:46Z",
+  "durationMs": 577000,
+  "package": "express",
+  "currentVersion": "4.17.1",
+  "targetVersion": "5.1.0",
+  "vulnerabilities": {
+    "current": [
+      {
+        "id": "GHSA-qw6h-vgh9-j6wx",
+        "cveAliases": ["CVE-2024-43796"],
+        "severity": "MEDIUM",
+        "fixedIn": "4.20.0",
+        "summary": "express vulnerable to XSS via response.redirect()"
+      },
+      {
+        "id": "GHSA-rv95-896h-c2vc",
+        "cveAliases": ["CVE-2024-29041"],
+        "severity": "MEDIUM",
+        "fixedIn": "4.19.2",
+        "summary": "Express.js Open Redirect in malformed URLs"
+      }
+    ],
+    "target": []
+  },
+  "exposure": {
+    "verdict": "exposed",
+    "closedBy": ["GHSA-qw6h-vgh9-j6wx", "GHSA-rv95-896h-c2vc"],
+    "stillPresent": []
+  },
+  "usageMap": [
+    { "file": "app.js", "line": 12, "symbol": "app.use", "snippet": "app.use(bodyParser.json());" },
+    { "file": "app.js", "line": 13, "symbol": "app.use", "snippet": "app.use(bodyParser.urlencoded({ extended: false }));" },
+    { "file": "app.js", "line": 16, "symbol": "app.get('/health')", "snippet": "app.get('/health', function (req, res) {" },
+    { "file": "app.js", "line": 17, "symbol": "res.json", "snippet": "res.json({ status: 'ok', uptime: process.uptime() });" },
+    { "file": "app.js", "line": 21, "symbol": "app.get('/files/*')", "snippet": "app.get('/files/*', function (req, res) {" },
+    { "file": "app.js", "line": 22, "symbol": "req.params", "snippet": "var filePath = req.params[0];" },
+    { "file": "app.js", "line": 23, "symbol": "res.json", "snippet": "res.json({ file: filePath, served: true });" },
+    { "file": "app.js", "line": 26, "symbol": "app.use('/auth')", "snippet": "app.use('/auth', authRoutes);" },
+    { "file": "app.js", "line": 27, "symbol": "app.use('/tasks')", "snippet": "app.use('/tasks', tasksRoutes);" },
+    { "file": "app.js", "line": 28, "symbol": "app.use('/admin')", "snippet": "app.use('/admin', adminRoutes);" },
+    { "file": "app.js", "line": 31, "symbol": "app.all('/api/*')", "snippet": "app.all('/api/*', function (req, res) {" },
+    { "file": "app.js", "line": 32, "symbol": "res.redirect('back')", "snippet": "res.redirect('back');" },
+    { "file": "app.js", "line": 36, "symbol": "app.use", "snippet": "app.use(function (req, res) {" },
+    { "file": "app.js", "line": 37, "symbol": "res.send", "snippet": "res.send(404);" },
+    { "file": "app.js", "line": 41, "symbol": "app.use", "snippet": "app.use(function (err, req, res, next) {" },
+    { "file": "app.js", "line": 42, "symbol": "err.status", "snippet": "var status = err.status || err.statusCode || 500;" },
+    { "file": "app.js", "line": 43, "symbol": "res.json", "snippet": "res.json(status, { error: err.message || 'Internal Server Error' });" },
+    { "file": "routes/admin.js", "line": 6, "symbol": "express.Router", "snippet": "var router = express.Router();" },
+    { "file": "routes/admin.js", "line": 37, "symbol": "router.get('/stats')", "snippet": "router.get('/stats', requireAdmin, function (req, res) {" },
+    { "file": "routes/admin.js", "line": 46, "symbol": "router.get('/users')", "snippet": "router.get('/users', requireAdmin, function (req, res) {" },
+    { "file": "routes/admin.js", "line": 57, "symbol": "router.del", "snippet": "router.del = router.delete;" },
+    { "file": "routes/admin.js", "line": 58, "symbol": "router.del('/users/:id')", "snippet": "router.del('/users/:id', requireAdmin, function (req, res, next) {" },
+    { "file": "routes/admin.js", "line": 59, "symbol": "req.param('id')", "snippet": "var id = parseInt(req.param('id'), 10);" },
+    { "file": "routes/admin.js", "line": 87, "symbol": "req.param('level')", "snippet": "var level = req.param('level') || 'info';" },
+    { "file": "routes/auth.js", "line": 6, "symbol": "express.Router", "snippet": "var router = express.Router();" },
+    { "file": "routes/tasks.js", "line": 6, "symbol": "express.Router", "snippet": "var router = express.Router();" },
+    { "file": "routes/tasks.js", "line": 66, "symbol": "req.param('id')", "snippet": "var id = parseInt(req.param('id'), 10);" },
+    { "file": "routes/tasks.js", "line": 67, "symbol": "req.param('field')", "snippet": "var field = req.param('field');" },
+    { "file": "routes/tasks.js", "line": 111, "symbol": "res.send", "snippet": "res.send(201);" },
+    { "file": "routes/tasks.js", "line": 116, "symbol": "req.param('id')", "snippet": "var id = parseInt(req.param('id'), 10);" },
+    { "file": "routes/tasks.js", "line": 146, "symbol": "req.param('id')", "snippet": "var id = parseInt(req.param('id'), 10);" },
+    { "file": "routes/tasks.js", "line": 168, "symbol": "req.param('id')", "snippet": "var id = parseInt(req.param('id'), 10);" },
+    { "file": "routes/tasks.js", "line": 178, "symbol": "res.send", "snippet": "res.send(204);" }
+  ]
+}

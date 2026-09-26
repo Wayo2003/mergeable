@@ -1,0 +1,214 @@
+[
+  {
+    "id": "bc-001",
+    "title": "app.del() removed",
+    "description": "Express 5 no longer supports app.del(). Use app.delete() instead. Also applies to router.del().",
+    "detection": {
+      "pattern": "\\.del\\s*\\(",
+      "note": "Search for .del( calls on app or router objects"
+    },
+    "fix": {
+      "before": "router.del('/users/:id', requireAdmin, function (req, res, next) {",
+      "after": "router.delete('/users/:id', requireAdmin, function (req, res, next) {",
+      "notes": "Also remove any shim like 'router.del = router.delete' — it is no longer needed."
+    },
+    "source": "Removed methods and properties — app.del()",
+    "relevant": true
+  },
+  {
+    "id": "bc-002",
+    "title": "app.param(fn) removed",
+    "description": "The app.param(fn) single-argument signature for modifying app.param behaviour has been removed. Express 5 no longer supports it.",
+    "detection": {
+      "pattern": "\\.param\\s*\\(\\s*function",
+      "note": "Search for .param(function ... calls (single-function-argument form)"
+    },
+    "fix": {
+      "before": "app.param(function (name, option) { ... });",
+      "after": "// Remove this call entirely; use app.param(name, fn) per-parameter instead",
+      "notes": "Only the two-argument app.param(name, fn) form is supported."
+    },
+    "source": "Removed methods and properties — app.param(fn)",
+    "relevant": false,
+    "note": "No matching call sites found in usage map"
+  },
+  {
+    "id": "bc-003",
+    "title": "Pluralized method names — req.acceptsCharset / req.acceptsEncoding / req.acceptsLanguage removed",
+    "description": "req.acceptsCharset(), req.acceptsEncoding(), and req.acceptsLanguage() have been removed. Use the pluralised versions req.acceptsCharsets(), req.acceptsEncodings(), req.acceptsLanguages() instead.",
+    "detection": {
+      "pattern": "req\\.acceptsCharset\\b|req\\.acceptsEncoding\\b|req\\.acceptsLanguage\\b",
+      "note": "Search for the singular (non-plural) versions of these req methods"
+    },
+    "fix": {
+      "before": "req.acceptsCharset('utf-8'); req.acceptsEncoding('br'); req.acceptsLanguage('en');",
+      "after": "req.acceptsCharsets('utf-8'); req.acceptsEncodings('br'); req.acceptsLanguages('en');",
+      "notes": "Simple rename — add an 's' to the end of each method name."
+    },
+    "source": "Removed methods and properties — Pluralized method names",
+    "relevant": false,
+    "note": "No matching call sites found in usage map"
+  },
+  {
+    "id": "bc-004",
+    "title": "req.param(name) removed",
+    "description": "req.param(name) has been removed. Look up parameters explicitly in req.params, req.body, or req.query.",
+    "detection": {
+      "pattern": "req\\.param\\s*\\(",
+      "note": "Search for req.param( calls throughout the codebase"
+    },
+    "fix": {
+      "before": "var id = req.param('id');\nvar field = req.param('field');\nvar level = req.param('level');",
+      "after": "var id = req.params.id;\nvar field = req.params.field;\nvar level = req.params.level;",
+      "notes": "For route params like :id, :field, :level use req.params.<name>. For body params use req.body.<name>. For query params use req.query.<name>."
+    },
+    "source": "Removed methods and properties — req.param(name)",
+    "relevant": true
+  },
+  {
+    "id": "bc-005",
+    "title": "res.json(status, obj) signature removed",
+    "description": "Express 5 no longer supports res.json(obj, status) or res.json(status, obj). Use res.status(status).json(obj) instead.",
+    "detection": {
+      "pattern": "res\\.json\\s*\\(\\s*\\w+\\s*,",
+      "note": "Search for res.json calls with two arguments where one is a numeric status code or variable"
+    },
+    "fix": {
+      "before": "res.json(status, { error: err.message || 'Internal Server Error' });",
+      "after": "res.status(status).json({ error: err.message || 'Internal Server Error' });",
+      "notes": "Move the status to res.status() and chain .json()."
+    },
+    "source": "Removed methods and properties — res.json(obj, status)",
+    "relevant": true
+  },
+  {
+    "id": "bc-006",
+    "title": "res.redirect('back') removed",
+    "description": "Express 5 no longer supports the magic string 'back' in res.redirect() and res.location(). Use req.get('Referrer') || '/' instead.",
+    "detection": {
+      "pattern": "res\\.redirect\\s*\\(\\s*['\"]back['\"]\\s*\\)|res\\.location\\s*\\(\\s*['\"]back['\"]\\s*\\)",
+      "note": "Search for res.redirect('back') or res.location('back') calls"
+    },
+    "fix": {
+      "before": "res.redirect('back');",
+      "after": "res.redirect(req.get('Referrer') || '/');",
+      "notes": "Replace the magic string 'back' with an explicit referrer check."
+    },
+    "source": "Removed methods and properties — res.redirect('back') and res.location('back')",
+    "relevant": true
+  },
+  {
+    "id": "bc-007",
+    "title": "res.send(status) with numeric-only argument removed",
+    "description": "Express 5 no longer supports res.send(status) where status is a number. Use res.sendStatus(statusCode) instead.",
+    "detection": {
+      "pattern": "res\\.send\\s*\\(\\s*\\d+\\s*\\)",
+      "note": "Search for res.send() calls with a lone numeric argument (status code only)"
+    },
+    "fix": {
+      "before": "res.send(404);\nres.send(201);\nres.send(204);",
+      "after": "res.sendStatus(404);\nres.sendStatus(201);\nres.sendStatus(204);",
+      "notes": "When the only argument to res.send() is a number, use res.sendStatus() instead."
+    },
+    "source": "Removed methods and properties — res.send(body, status) and res.send(status)",
+    "relevant": true
+  },
+  {
+    "id": "bc-008",
+    "title": "res.sendfile() removed (use res.sendFile())",
+    "description": "The lowercase res.sendfile() has been replaced by camelCased res.sendFile() in Express 5.",
+    "detection": {
+      "pattern": "res\\.sendfile\\s*\\(",
+      "note": "Search for res.sendfile( (lowercase f)"
+    },
+    "fix": {
+      "before": "res.sendfile('/path/to/file');",
+      "after": "res.sendFile('/path/to/file');",
+      "notes": "Simple rename to camelCase."
+    },
+    "source": "Removed methods and properties — res.sendfile()",
+    "relevant": false,
+    "note": "No matching call sites found in usage map"
+  },
+  {
+    "id": "bc-009",
+    "title": "Wildcard route paths must be named (/* → /*splat)",
+    "description": "In Express 5, the wildcard * in route paths must have a name. Replace /* with /*splat (or any other name).",
+    "detection": {
+      "pattern": "'/[^']*\\*[^a-zA-Z_$]|'/[^']*\\*'",
+      "note": "Search for route path strings containing a bare /* without a name following the *"
+    },
+    "fix": {
+      "before": "app.get('/files/*', function (req, res) {\napp.all('/api/*', function (req, res) {",
+      "after": "app.get('/files/*splat', function (req, res) {\napp.all('/api/*splat', function (req, res) {",
+      "notes": "Any name after * is acceptable. Also update req.params access from req.params[0] to req.params.splat."
+    },
+    "source": "Changed — Path route matching syntax",
+    "relevant": true
+  },
+  {
+    "id": "bc-010",
+    "title": "req.params wildcard values are now arrays",
+    "description": "In Express 5, wildcard parameters captured via /*name produce an array of path segments, not a single string. req.params[0] is no longer valid.",
+    "detection": {
+      "pattern": "req\\.params\\s*\\[\\s*0\\s*\\]",
+      "note": "Search for req.params[0] access which relied on the old unnamed wildcard behaviour"
+    },
+    "fix": {
+      "before": "var filePath = req.params[0];",
+      "after": "var filePath = req.params.splat;",
+      "notes": "After renaming /* to /*splat, access the value as req.params.splat. It will be a string for single-segment matches or an array for multi-segment. Join with '/' if needed: Array.isArray(req.params.splat) ? req.params.splat.join('/') : req.params.splat."
+    },
+    "source": "Changed — req.params (wildcard parameters are now arrays)",
+    "relevant": true
+  },
+  {
+    "id": "bc-011",
+    "title": "req.query is now a read-only getter",
+    "description": "req.query is no longer a writable property. Assigning to req.query or any of its properties will silently fail or throw. The default query parser has also changed from 'extended' to 'simple'.",
+    "detection": {
+      "pattern": "req\\.query\\s*\\.\\w+\\s*=|req\\.query\\s*=",
+      "note": "Search for assignments to req.query or its sub-properties"
+    },
+    "fix": {
+      "before": "req.query.status = req.query.status.toLowerCase();\nreq.query.priority = req.query.priority.toLowerCase();",
+      "after": "var status = req.query.status ? req.query.status.toLowerCase() : undefined;\nvar priority = req.query.priority ? req.query.priority.toLowerCase() : undefined;",
+      "notes": "Do not mutate req.query. Store derived values in local variables and use those variables downstream in the same handler."
+    },
+    "source": "Changed — req.query",
+    "relevant": true
+  },
+  {
+    "id": "bc-012",
+    "title": "res.redirect(url, status) argument order changed",
+    "description": "Express 5 no longer supports res.redirect(url, status). The new signature is res.redirect(status, url). Calls with a single URL argument (default 302) are unaffected.",
+    "detection": {
+      "pattern": "res\\.redirect\\s*\\([^)]+,\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.redirect with a numeric status as the second argument"
+    },
+    "fix": {
+      "before": "res.redirect('/users', 302);",
+      "after": "res.redirect(302, '/users');",
+      "notes": "Swap the argument order. Single-argument calls like res.redirect('/dashboard') are unchanged."
+    },
+    "source": "Removed methods and properties — res.redirect(url, status)",
+    "relevant": false,
+    "note": "No matching call sites found in usage map"
+  },
+  {
+    "id": "bc-013",
+    "title": "Optional route parameter suffix ? removed (use braces)",
+    "description": "Express 5 path-to-regexp no longer supports the ? suffix for optional route segments (e.g. :param?). Use braces syntax instead: {:param} or :param{:ext}.",
+    "detection": {
+      "pattern": ":[a-zA-Z_$][a-zA-Z0-9_$]*\\?",
+      "note": "Search for route path strings containing :paramName? optional param suffix"
+    },
+    "fix": {
+      "before": "router.get('/:id/:field?', ...)\nrouter.get('/logs/:level?', ...)",
+      "after": "router.get('/:id{/:field}', ...)\nrouter.get('/logs{/:level}', ...)",
+      "notes": "Wrap the optional segment (including the leading slash) in braces. When the param is absent, req.params.field / req.params.level will be undefined."
+    },
+    "source": "Changed — Path route matching syntax (optional character ? no longer supported)",
+    "relevant": true
+  }
+]

@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade Dossier · express 4.17.1 → 5.1.0</title>
+<style>
+/* ── Reset & tokens ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #ffffff;
+  --surface:   #f7f8fa;
+  --border:    #e5e7eb;
+  --text:      #1f2328;
+  --muted:     #57606a;
+  --accent:    #3b82d4;
+  --green:     #16a34a;
+  --green-bg:  #dcfce7;
+  --green-bd:  #86efac;
+  --red:       #dc2626;
+  --red-bg:    #fee2e2;
+  --red-bd:    #fca5a5;
+  --yellow:    #b45309;
+  --yellow-bg: #fef3c7;
+  --yellow-bd: #fcd34d;
+  --purple:    #7c3aed;
+  --purple-bg: #ede9fe;
+  --radius:    6px;
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #58a6ff;
+    --green:     #3fb950;
+    --green-bg:  #0d2a18;
+    --green-bd:  #238636;
+    --red:       #f85149;
+    --red-bg:    #2d1117;
+    --red-bd:    #b91c1c;
+    --yellow:    #d29922;
+    --yellow-bg: #2d2000;
+    --yellow-bd: #9e6a03;
+    --purple:    #a78bfa;
+    --purple-bg: #1e1635;
+    --purple-bd: #6d28d9;
+    --shadow:    0 1px 3px rgba(0,0,0,.4);
+  }
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  padding: 32px 16px 64px;
+}
+
+.container { max-width: 820px; margin: 0 auto; }
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+code, pre { font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace; font-size: 12.5px; }
+pre { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; overflow-x: auto; line-height: 1.5; }
+code { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; }
+pre code { background: none; border: none; padding: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.dossier-header { padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.dossier-header h1 { font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 4px; }
+.dossier-header .meta { font-size: 12px; color: var(--muted); }
+.dossier-header .meta span + span::before { content: " · "; }
+
+.verdict { border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; border: 1px solid; }
+.verdict-green { background: var(--green-bg); border-color: var(--green-bd); }
+.verdict-red   { background: var(--red-bg);   border-color: var(--red-bd); }
+.verdict-left { display: flex; flex-direction: column; gap: 4px; }
+.verdict-label { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.verdict-green .verdict-label { color: var(--green); }
+.verdict-red   .verdict-label { color: var(--red); }
+.verdict-sub { font-size: 13px; color: var(--muted); }
+.verdict-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid; white-space: nowrap; }
+.pill-cve  { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
+.pill-sev-medium { background: var(--yellow-bg); border-color: var(--yellow-bd); color: var(--yellow); }
+.pill-merge { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); font-size: 13px; padding: 6px 14px; }
+
+.section { margin-bottom: 28px; }
+.section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 28px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.stat-number { font-size: 28px; font-weight: 800; line-height: 1.1; color: var(--accent); }
+.stat-label  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+.test-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.test-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.test-card-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); margin-bottom: 10px; }
+.test-bar-wrap { position: relative; height: 10px; background: var(--border); border-radius: 5px; margin-bottom: 8px; overflow: hidden; }
+.test-bar-pass { position: absolute; left: 0; top: 0; height: 100%; background: var(--green); border-radius: 5px; }
+.test-bar-fail { position: absolute; right: 0; top: 0; height: 100%; background: var(--red); border-radius: 5px; }
+.test-counts { display: flex; gap: 14px; font-size: 13px; font-weight: 600; }
+.tc-pass { color: var(--green); }
+.tc-fail { color: var(--red); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; padding: 8px 12px; font-weight: 600; background: var(--surface); border-bottom: 2px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface); }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+.badge-medium { background: var(--yellow-bg); color: var(--yellow); }
+.badge-fixed  { background: var(--green-bg);  color: var(--green); }
+
+.bc-list { display: flex; flex-direction: column; gap: 6px; }
+details.bc-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+details.bc-item[open] { border-color: var(--accent); }
+summary.bc-summary { list-style: none; cursor: pointer; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; user-select: none; }
+summary.bc-summary::-webkit-details-marker { display: none; }
+summary.bc-summary::before { content: "▶"; font-size: 10px; color: var(--muted); transition: transform .15s; }
+details[open] summary.bc-summary::before { transform: rotate(90deg); }
+.bc-id { font-size: 11px; font-weight: 700; color: var(--muted); font-family: ui-monospace, monospace; }
+.bc-title-text { font-size: 13px; font-weight: 600; }
+.bc-files-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.bc-body { padding: 0 14px 14px; }
+.bc-description { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+.bc-sub-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 4px; margin-top: 10px; }
+.diff-block { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.5; }
+.diff-block .diff-line { padding: 1px 10px; white-space: pre; }
+.diff-line-add  { background: rgba(22,163,74,.12);  color: var(--green); }
+.diff-line-del  { background: rgba(220,38,38,.12);  color: var(--red); }
+
+.risk-box { background: var(--green-bg); border: 1px solid var(--green-bd); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: var(--text); line-height: 1.6; }
+
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.5; }
+.checklist li::before { content: "☐"; font-size: 15px; color: var(--muted); flex-shrink: 0; margin-top: 1px; }
+
+.dossier-footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 540px) {
+  .test-comparison { grid-template-columns: 1fr; }
+  .verdict { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="dossier-header">
+    <h1>Upgrade Dossier · <code>express</code> 4.17.1 → 5.1.0</h1>
+    <div class="meta">
+      <span>Run <code>20260926-154709</code></span>
+      <span>Generated 2026-09-26T15:56:46Z</span>
+    </div>
+  </header>
+
+  <div class="verdict verdict-green">
+    <div class="verdict-left">
+      <div class="verdict-label">
+        ✅ Ready to merge
+      </div>
+      <div class="verdict-sub">33 tests passing · 0 failing · 0 file groups reverted</div>
+    </div>
+    <div class="verdict-pills">
+      <span class="pill pill-cve">2 CVEs closed</span>
+      <span class="pill pill-sev-medium">MEDIUM severity</span>
+      <span class="pill pill-merge">✓ Merge</span>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number">20</div>
+      <div class="stat-label">Call sites fixed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">3</div>
+      <div class="stat-label">Files touched</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">9</div>
+      <div class="stat-label">Breaking changes handled</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">9<span style="font-size:16px;font-weight:400"> min</span></div>
+      <div class="stat-label">Total time</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Test results</div>
+    <div class="test-comparison">
+      <div class="test-card">
+        <div class="test-card-label">Before upgrade</div>
+        <div class="test-bar-wrap">
+          <div class="test-bar-pass" style="width:0%"></div>
+          <div class="test-bar-fail" style="width:100%"></div>
+        </div>
+        <div class="test-counts">
+          <span class="tc-pass">✓ 0 passing</span>
+          <span class="tc-fail">✗ Suite crashed (path-to-regexp error)</span>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-card-label">After upgrade</div>
+        <div class="test-bar-wrap">
+          <div class="test-bar-pass" style="width:100%"></div>
+          <div class="test-bar-fail" style="width:0%"></div>
+        </div>
+        <div class="test-counts">
+          <span class="tc-pass">✓ 33 passing</span>
+          <span class="tc-fail">✗ 0 failing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Vulnerabilities closed</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Aliases</th>
+            <th>Severity</th>
+            <th>Summary</th>
+            <th>Fixed in</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><a href="https://osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx">GHSA-qw6h-vgh9-j6wx</a></td>
+            <td><code>CVE-2024-43796</code></td>
+            <td><span class="badge badge-medium">MEDIUM</span></td>
+            <td>express vulnerable to XSS via response.redirect()</td>
+            <td><span class="badge badge-fixed">4.20.0 / 5.0.0</span></td>
+          </tr>
+          <tr>
+            <td><a href="https://osv.dev/vulnerability/GHSA-rv95-896h-c2vc">GHSA-rv95-896h-c2vc</a></td>
+            <td><code>CVE-2024-29041</code></td>
+            <td><span class="badge badge-medium">MEDIUM</span></td>
+            <td>Express.js Open Redirect in malformed URLs</td>
+            <td><span class="badge badge-fixed">4.19.2 / 5.0.0-beta.3</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Breaking changes handled (9)</div>
+    <div class="bc-list">
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-001</span>
+          <span class="bc-title-text">app.del() / router.del() removed</span>
+          <span class="bc-files-count">routes/admin.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">Express 5 no longer supports router.del(). The shim <code>router.del = router.delete</code> was removed and the route was renamed to use <code>router.delete()</code> directly.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- router.del = router.delete;</div>
+            <div class="diff-line diff-line-del">- router.del('/users/:id', requireAdmin, function (req, res, next) {</div>
+            <div class="diff-line diff-line-add">+ router.delete('/users/:id', requireAdmin, function (req, res, next) {</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-004</span>
+          <span class="bc-title-text">req.param(name) removed</span>
+          <span class="bc-files-count">routes/admin.js · routes/tasks.js (8 sites)</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">req.param() has been removed. Each call was replaced with explicit access to req.params.&lt;name&gt; for route parameters.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- var id = parseInt(req.param('id'), 10);</div>
+            <div class="diff-line diff-line-add">+ var id = parseInt(req.params.id, 10);</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-005</span>
+          <span class="bc-title-text">res.json(status, obj) signature removed</span>
+          <span class="bc-files-count">app.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">res.json() no longer accepts a status code as the first argument. Use res.status(code).json(obj).</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- res.json(status, { error: err.message || 'Internal Server Error' });</div>
+            <div class="diff-line diff-line-add">+ res.status(status).json({ error: err.message || 'Internal Server Error' });</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-006</span>
+          <span class="bc-title-text">res.redirect('back') removed</span>
+          <span class="bc-files-count">app.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">The magic string 'back' is no longer supported in res.redirect(). Use req.get('Referrer') || '/' instead.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- res.redirect('back');</div>
+            <div class="diff-line diff-line-add">+ res.redirect(req.get('Referrer') || '/');</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-007</span>
+          <span class="bc-title-text">res.send(numericStatus) removed</span>
+          <span class="bc-files-count">app.js · routes/tasks.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">res.send() with a lone numeric argument is no longer supported. Use res.sendStatus(code) instead.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- res.send(404);</div>
+            <div class="diff-line diff-line-add">+ res.sendStatus(404);</div>
+            <div class="diff-line diff-line-del">- res.send(201);</div>
+            <div class="diff-line diff-line-add">+ res.sendStatus(201);</div>
+            <div class="diff-line diff-line-del">- res.send(204);</div>
+            <div class="diff-line diff-line-add">+ res.sendStatus(204);</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-009</span>
+          <span class="bc-title-text">Wildcard route paths must be named (/* → /*splat)</span>
+          <span class="bc-files-count">app.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">Express 5 requires all wildcards to have a name. Bare /* routes now require a named wildcard like /*splat.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- app.get('/files/*', function (req, res) {</div>
+            <div class="diff-line diff-line-add">+ app.get('/files/*splat', function (req, res) {</div>
+            <div class="diff-line diff-line-del">- app.all('/api/*', function (req, res) {</div>
+            <div class="diff-line diff-line-add">+ app.all('/api/*splat', function (req, res) {</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-010</span>
+          <span class="bc-title-text">req.params wildcard values are now arrays</span>
+          <span class="bc-files-count">app.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">Wildcard params captured via /*name are now named and may return an array. req.params[0] is replaced with req.params.splat, joined with '/' if needed.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- var filePath = req.params[0];</div>
+            <div class="diff-line diff-line-add">+ var filePath = Array.isArray(req.params.splat) ? req.params.splat.join('/') : req.params.splat;</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-011</span>
+          <span class="bc-title-text">req.query is now a read-only getter</span>
+          <span class="bc-files-count">routes/tasks.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">req.query is no longer writable. Assignments to its properties are not allowed. Local variables are used instead.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- req.query.status = req.query.status.toLowerCase();</div>
+            <div class="diff-line diff-line-del">- req.query.priority = req.query.priority.toLowerCase();</div>
+            <div class="diff-line diff-line-add">+ var status = req.query.status ? req.query.status.toLowerCase() : undefined;</div>
+            <div class="diff-line diff-line-add">+ var priority = req.query.priority ? req.query.priority.toLowerCase() : undefined;</div>
+          </div>
+        </div>
+      </details>
+
+      <details class="bc-item">
+        <summary class="bc-summary">
+          <span class="bc-id">bc-013</span>
+          <span class="bc-title-text">Optional route parameter suffix ? removed (use braces)</span>
+          <span class="bc-files-count">routes/admin.js · routes/tasks.js</span>
+        </summary>
+        <div class="bc-body">
+          <div class="bc-description">Express 5 path-to-regexp no longer supports the :param? syntax for optional segments. Braces syntax {:param} / {/:param} is used instead.</div>
+          <div class="bc-sub-label">Fix applied</div>
+          <div class="diff-block">
+            <div class="diff-line diff-line-del">- router.get('/:id/:field?', requireAuth, ...</div>
+            <div class="diff-line diff-line-add">+ router.get('/:id{/:field}', requireAuth, ...</div>
+            <div class="diff-line diff-line-del">- router.get('/logs/:level?', requireAdmin, ...</div>
+            <div class="diff-line diff-line-add">+ router.get('/logs{/:level}', requireAdmin, ...</div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Residual risk</div>
+    <div class="risk-box">No residual risk. All 9 breaking changes were handled and all 33 tests pass after the upgrade.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Reviewer checklist</div>
+    <ul class="checklist">
+      <li>Verify the <code>res.redirect(req.get('Referrer') || '/')</code> fallback URL matches your application's expected behaviour for the <code>/api/*</code> catch-all route.</li>
+      <li>Confirm <code>res.sendStatus(201)</code> and <code>res.sendStatus(204)</code> responses satisfy any API clients that depended on an empty body (sendStatus sends the status text as body).</li>
+      <li>Check that the <code>/*splat</code> wildcard in <code>/files/*splat</code> correctly joins multi-segment paths (e.g. <code>/files/a/b/c</code>) as expected by downstream consumers.</li>
+      <li>Review that removing the <code>req.query</code> mutation does not affect any middleware that ran after the GET /tasks handler and relied on the normalised query values.</li>
+      <li>Confirm no other files outside <code>app.js</code>, <code>routes/admin.js</code>, and <code>routes/tasks.js</code> use deprecated Express 4 APIs (e.g. plugins, custom middleware).</li>
+      <li>Ensure Node.js version is ≥ 18 in all deployment environments (Express 5 requirement).</li>
+      <li>Run <code>npm audit</code> and review the 3 remaining high-severity notices (not related to express itself).</li>
+    </ul>
+  </div>
+
+  <footer class="dossier-footer">
+    Generated by <strong>Mergeable</strong> on <strong>IBM Bob</strong>
+  </footer>
+
+</div>
+</body>
+</html>

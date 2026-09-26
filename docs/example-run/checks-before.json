@@ -1,0 +1,13 @@
+{
+  "passed": 0,
+  "failed": 0,
+  "failures": [
+    {
+      "suite": "__tests__/api.test.js",
+      "error": "TypeError: Unexpected ? at index 11: /:id/:field?; visit https://git.new/pathToRegexpError for info",
+      "note": "Test suite failed to run — Express 5 path-to-regexp rejects the optional ? syntax before any tests execute"
+    }
+  ],
+  "durationMs": 1312,
+  "note": "0 tests ran because the suite crashed at require time due to Express 5 incompatible route syntax"
+}

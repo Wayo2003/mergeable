@@ -1,0 +1,166 @@
+﻿diff --git a/demo-target/app.js b/demo-target/app.js
+index 9ae439f..1796d01 100644
+--- a/demo-target/app.js
++++ b/demo-target/app.js
+@@ -18,8 +18,8 @@ app.get('/health', function (req, res) {
+ });
+ 
+ // Static file passthrough (wildcard route)
+-app.get('/files/*', function (req, res) {
+-  var filePath = req.params[0];
++app.get('/files/*splat', function (req, res) {
++  var filePath = Array.isArray(req.params.splat) ? req.params.splat.join('/') : req.params.splat;
+   res.json({ file: filePath, served: true });
+ });
+ 
+@@ -28,19 +28,19 @@ app.use('/tasks', tasksRoutes);
+ app.use('/admin', adminRoutes);
+ 
+ // Catch-all redirect for unknown API paths
+-app.all('/api/*', function (req, res) {
+-  res.redirect('back');
++app.all('/api/*splat', function (req, res) {
++  res.redirect(req.get('Referrer') || '/');
+ });
+ 
+ // 404 handler
+ app.use(function (req, res) {
+-  res.send(404);
++  res.sendStatus(404);
+ });
+ 
+ // Error middleware
+ app.use(function (err, req, res, next) {
+   var status = err.status || err.statusCode || 500;
+-  res.json(status, { error: err.message || 'Internal Server Error' });
++  res.status(status).json({ error: err.message || 'Internal Server Error' });
+ });
+ 
+ module.exports = app;
+diff --git a/demo-target/package.json b/demo-target/package.json
+index e4622b7..27bde4b 100644
+--- a/demo-target/package.json
++++ b/demo-target/package.json
+@@ -9,7 +9,7 @@
+   },
+   "dependencies": {
+     "body-parser": "1.18.3",
+-    "express": "4.17.1",
++    "express": "^5.1.0",
+     "jsonwebtoken": "^8.5.1"
+   },
+   "devDependencies": {
+diff --git a/demo-target/routes/admin.js b/demo-target/routes/admin.js
+index 55598c1..252fa5d 100644
+--- a/demo-target/routes/admin.js
++++ b/demo-target/routes/admin.js
+@@ -54,9 +54,8 @@ router.get('/users', requireAdmin, function (req, res) {
+ });
+ 
+ // DELETE /admin/users/:id — remove a user (admin only), uses app.del() style
+-router.del = router.delete;
+-router.del('/users/:id', requireAdmin, function (req, res, next) {
+-  var id = parseInt(req.param('id'), 10);
++router.delete('/users/:id', requireAdmin, function (req, res, next) {
++  var id = parseInt(req.params.id, 10);
+   if (isNaN(id) || id < 1) {
+     var err = new Error('Invalid user id');
+     err.status = 400;
+@@ -83,8 +82,8 @@ router.post('/broadcast', requireAdmin, function (req, res, next) {
+ });
+ 
+ // GET /admin/logs/:level? — fetch logs, optional severity level
+-router.get('/logs/:level?', requireAdmin, function (req, res) {
+-  var level = req.param('level') || 'info';
++router.get('/logs{/:level}', requireAdmin, function (req, res) {
++  var level = req.params.level || 'info';
+   var sampleLogs = [
+     { ts: '2023-06-01T00:00:01Z', level: 'info',  msg: 'Server started' },
+     { ts: '2023-06-01T00:01:00Z', level: 'info',  msg: 'GET /health 200' },
+diff --git a/demo-target/routes/tasks.js b/demo-target/routes/tasks.js
+index 77712e2..5a45d11 100644
+--- a/demo-target/routes/tasks.js
++++ b/demo-target/routes/tasks.js
+@@ -40,31 +40,25 @@ function requireAuth(req, res, next) {
+ // GET /tasks — list tasks; supports ?status and ?priority filters
+ // Also demonstrates req.query mutation to normalise filter values
+ router.get('/', requireAuth, function (req, res) {
+-  // Normalise filters via req.query mutation
+-  if (req.query.status) {
+-    req.query.status = req.query.status.toLowerCase();
+-  }
+-  if (req.query.priority) {
+-    req.query.priority = req.query.priority.toLowerCase();
+-  }
++  var status = req.query.status ? req.query.status.toLowerCase() : undefined;
++  var priority = req.query.priority ? req.query.priority.toLowerCase() : undefined;
+ 
+   var result = tasks.slice();
+ 
+-  if (req.query.status) {
+-    result = result.filter(function (t) { return t.status === req.query.status; });
++  if (status) {
++    result = result.filter(function (t) { return t.status === status; });
+   }
+-  if (req.query.priority) {
+-    result = result.filter(function (t) { return t.priority === req.query.priority; });
++  if (priority) {
++    result = result.filter(function (t) { return t.priority === priority; });
+   }
+ 
+   res.json({ tasks: result, total: result.length });
+ });
+ 
+ // GET /tasks/:id/:field? — get task by id; optional field param returns just that field
+-router.get('/:id/:field?', requireAuth, function (req, res, next) {
+-  // Use req.param() to read both route and query params
+-  var id = parseInt(req.param('id'), 10);
+-  var field = req.param('field');
++router.get('/:id{/:field}', requireAuth, function (req, res, next) {
++  var id = parseInt(req.params.id, 10);
++  var field = req.params.field;
+ 
+   var task = tasks.filter(function (t) { return t.id === id; })[0];
+ 
+@@ -108,12 +102,12 @@ router.post('/', requireAuth, function (req, res, next) {
+   };
+ 
+   tasks.push(task);
+-  res.send(201);
++  res.sendStatus(201);
+ });
+ 
+ // PUT /tasks/:id — replace task
+ router.put('/:id', requireAuth, function (req, res, next) {
+-  var id = parseInt(req.param('id'), 10);
++  var id = parseInt(req.params.id, 10);
+   var idx = tasks.map(function (t) { return t.id; }).indexOf(id);
+ 
+   if (idx === -1) {
+@@ -143,7 +137,7 @@ router.put('/:id', requireAuth, function (req, res, next) {
+ 
+ // PATCH /tasks/:id — partial update
+ router.patch('/:id', requireAuth, function (req, res, next) {
+-  var id = parseInt(req.param('id'), 10);
++  var id = parseInt(req.params.id, 10);
+   var idx = tasks.map(function (t) { return t.id; }).indexOf(id);
+ 
+   if (idx === -1) {
+@@ -165,7 +159,7 @@ router.patch('/:id', requireAuth, function (req, res, next) {
+ 
+ // DELETE /tasks/:id — uses app.del()-style pattern on the router
+ router.delete('/:id', requireAuth, function (req, res, next) {
+-  var id = parseInt(req.param('id'), 10);
++  var id = parseInt(req.params.id, 10);
+   var idx = tasks.map(function (t) { return t.id; }).indexOf(id);
+ 
+   if (idx === -1) {
+@@ -175,7 +169,7 @@ router.delete('/:id', requireAuth, function (req, res, next) {
+   }
+ 
+   tasks.splice(idx, 1);
+-  res.send(204);
++  res.sendStatus(204);
+ });
+ 
+ // Expose store for test reset
