@@ -1,0 +1,497 @@
+[
+  {
+    "id": "bc-001",
+    "title": "app.del() removed",
+    "description": "Express 5 removes app.del(). It was the original alias for registering HTTP DELETE routes because 'delete' was a reserved keyword in older JavaScript. As of ECMAScript 6, 'delete' can be used as a property name, so app.delete() is the correct method. Calling app.del() throws an error.",
+    "detection": {
+      "pattern": "\\.del\\s*\\(",
+      "note": "Search for .del( — any call to app.del() or router.del()"
+    },
+    "fix": {
+      "before": "app.del('/user/:id', (req, res) => {\n  res.send(`DELETE /user/${req.params.id}`);\n});",
+      "after": "app.delete('/user/:id', (req, res) => {\n  res.send(`DELETE /user/${req.params.id}`);\n});",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/route-del-to-delete"
+    },
+    "source": "Removed methods and properties > app.del()"
+  },
+  {
+    "id": "bc-002",
+    "title": "app.param(fn) signature removed",
+    "description": "The app.param(fn) single-argument signature (used to modify the behaviour of app.param(name, fn)) has been deprecated since Express v4.11.0 and is completely removed in Express 5. Calling app.param() with a function as the only argument throws an error.",
+    "detection": {
+      "pattern": "app\\.param\\s*\\(\\s*function|app\\.param\\s*\\(\\s*\\(",
+      "note": "Search for app.param( followed by a function expression as first argument (no string name first)"
+    },
+    "fix": {
+      "before": "// Express 4 – modify param behaviour globally\napp.param(function(name, fn) {\n  // ...\n});",
+      "after": "// Express 5 – use app.param(name, fn) directly for each param\napp.param('id', (req, res, next, value) => {\n  // validate/load value\n  next();\n});",
+      "notes": "There is no direct replacement for the single-function form. Refactor any global param pre-processors into individual named param handlers."
+    },
+    "source": "Removed methods and properties > app.param(fn)"
+  },
+  {
+    "id": "bc-003",
+    "title": "Pluralized method names — req.acceptsCharset, req.acceptsEncoding, req.acceptsLanguage removed",
+    "description": "The singular method names req.acceptsCharset(), req.acceptsEncoding(), and req.acceptsLanguage() have been removed. They were deprecated in Express 4 with a deprecation warning. Express 5 only supports the pluralized forms.",
+    "detection": {
+      "pattern": "req\\.acceptsCharset\\b|req\\.acceptsEncoding\\b|req\\.acceptsLanguage\\b",
+      "note": "Search for the singular (non-pluralized) forms of these three request methods"
+    },
+    "fix": {
+      "before": "req.acceptsCharset('utf-8');\nreq.acceptsEncoding('br');\nreq.acceptsLanguage('en');",
+      "after": "req.acceptsCharsets('utf-8');\nreq.acceptsEncodings('br');\nreq.acceptsLanguages('en');",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/pluralize-method-names"
+    },
+    "source": "Removed methods and properties > Pluralized method names"
+  },
+  {
+    "id": "bc-004",
+    "title": "Leading colon in app.param(name, fn) name silently ignored",
+    "description": "Express 3 allowed a leading colon in the 'name' argument of app.param(name, fn) (a remnant of Express 3 syntax). Express 4 supported this with a deprecation notice. Express 5 silently strips the colon and uses the name without the prefix. This is only a concern if code depends on the leading-colon behaviour, which was never documented in Express 4.",
+    "detection": {
+      "pattern": "app\\.param\\s*\\(\\s*['\"]:",
+      "note": "Search for app.param( where the first string argument starts with a colon, e.g. app.param(':id', ...)"
+    },
+    "fix": {
+      "before": "app.param(':id', (req, res, next, id) => { next(); });",
+      "after": "app.param('id', (req, res, next, id) => { next(); });",
+      "notes": "Remove the leading colon from the name string. Behaviour is otherwise identical."
+    },
+    "source": "Removed methods and properties > Leading colon (:) in the name for app.param(name, fn)"
+  },
+  {
+    "id": "bc-005",
+    "title": "req.param(name) removed",
+    "description": "The req.param(name) method — which searched req.params, req.body, and req.query in a single call — has been removed in Express 5. It was considered confusing and potentially dangerous. You must now explicitly reference the correct source object.",
+    "detection": {
+      "pattern": "req\\.param\\s*\\(",
+      "note": "Search for req.param( calls — these must be replaced by explicit req.params / req.body / req.query access"
+    },
+    "fix": {
+      "before": "const id = req.param('id');\nconst body = req.param('body');\nconst query = req.param('query');",
+      "after": "const id = req.params.id;\nconst body = req.body;\nconst query = req.query;",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/explicit-request-params. Determine the correct source (params, body, or query) for each usage in your code — they are not interchangeable."
+    },
+    "source": "Removed methods and properties > req.param(name)"
+  },
+  {
+    "id": "bc-006",
+    "title": "res.json(obj, status) signature removed",
+    "description": "The two-argument form res.json(obj, status) where the second argument is a status code is no longer supported in Express 5. You must set the status first using res.status() and then chain .json().",
+    "detection": {
+      "pattern": "res\\.json\\s*\\([^)]+,\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.json( calls with a numeric status code as second argument"
+    },
+    "fix": {
+      "before": "res.json({ name: 'Ruben' }, 201);",
+      "after": "res.status(201).json({ name: 'Ruben' });",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/status-send-order"
+    },
+    "source": "Removed methods and properties > res.json(obj, status)"
+  },
+  {
+    "id": "bc-007",
+    "title": "res.jsonp(obj, status) signature removed",
+    "description": "The two-argument form res.jsonp(obj, status) is removed in Express 5. Set the status first using res.status(), then chain .jsonp().",
+    "detection": {
+      "pattern": "res\\.jsonp\\s*\\([^)]+,\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.jsonp( calls with a numeric status code as second argument"
+    },
+    "fix": {
+      "before": "res.jsonp({ name: 'Ruben' }, 201);",
+      "after": "res.status(201).jsonp({ name: 'Ruben' });",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/status-send-order"
+    },
+    "source": "Removed methods and properties > res.jsonp(obj, status)"
+  },
+  {
+    "id": "bc-008",
+    "title": "res.redirect(url, status) argument order changed",
+    "description": "Express 5 no longer supports the signature res.redirect(url, status). The argument order is reversed: use res.redirect(status, url) instead. Calls using the old order will redirect to the wrong URL or throw.",
+    "detection": {
+      "pattern": "res\\.redirect\\s*\\(\\s*['\"`/][^,]+,\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.redirect( where the first argument is a string path/URL and the second is a 3-digit number"
+    },
+    "fix": {
+      "before": "res.redirect('/users', 302);",
+      "after": "res.redirect(302, '/users');",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/redirect-arg-order. Calls with only a URL and no status code (using the default 302) are unaffected."
+    },
+    "source": "Removed methods and properties > res.redirect(url, status)"
+  },
+  {
+    "id": "bc-009",
+    "title": "res.redirect('back') and res.location('back') removed",
+    "description": "Express 5 removes the magic string 'back' from res.redirect() and res.location(). The 'back' string was deprecated in Express 4. You must now explicitly read the Referer header and provide a fallback.",
+    "detection": {
+      "pattern": "res\\.redirect\\s*\\(\\s*['\"]back['\"]\\s*\\)|res\\.location\\s*\\(\\s*['\"]back['\"]\\s*\\)",
+      "note": "Search for res.redirect('back') or res.location('back')"
+    },
+    "fix": {
+      "before": "res.redirect('back');\n// or\nres.location('back');",
+      "after": "res.redirect(req.get('Referrer') || '/');\n// or\nres.location(req.get('Referrer') || '/');",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/back-redirect-deprecated. Always provide a fallback URL (e.g. '/') in case the Referer header is absent."
+    },
+    "source": "Removed methods and properties > res.redirect('back') and res.location('back')"
+  },
+  {
+    "id": "bc-010",
+    "title": "res.send(body, status) argument order changed",
+    "description": "Express 5 removes the signature res.send(obj, status) where the second argument is a numeric status code. Set the status first using res.status() and then chain .send().",
+    "detection": {
+      "pattern": "res\\.send\\s*\\([^)]+,\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.send( calls with a numeric status code as second argument"
+    },
+    "fix": {
+      "before": "res.send({ name: 'Ruben' }, 200);",
+      "after": "res.status(200).send({ name: 'Ruben' });",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/status-send-order"
+    },
+    "source": "Removed methods and properties > res.send(body, status)"
+  },
+  {
+    "id": "bc-011",
+    "title": "res.send(status) with numeric argument replaced by res.sendStatus()",
+    "description": "When res.send() is called with a single numeric argument, Express 5 no longer treats it as a status code. Use res.sendStatus(statusCode) to send the HTTP status code along with its text representation (e.g. 'Not Found'). If you need to send a literal number as the body, convert it to a string.",
+    "detection": {
+      "pattern": "res\\.send\\s*\\(\\s*\\d{3}\\s*\\)",
+      "note": "Search for res.send( with a bare 3-digit number as the only argument"
+    },
+    "fix": {
+      "before": "res.send(200);\nres.send(404);",
+      "after": "res.sendStatus(200);\nres.sendStatus(404);\n// To send a literal number as body: res.send('200')",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/status-send-order"
+    },
+    "source": "Removed methods and properties > res.send(status)"
+  },
+  {
+    "id": "bc-012",
+    "title": "res.sendfile() renamed to res.sendFile()",
+    "description": "The lowercase res.sendfile() function has been replaced by the camelCase res.sendFile() in Express 5. Calling res.sendfile() throws an error.",
+    "detection": {
+      "pattern": "res\\.sendfile\\s*\\(",
+      "note": "Search for res.sendfile( (lowercase 'f') — must be renamed to res.sendFile("
+    },
+    "fix": {
+      "before": "res.sendfile('/path/to/file');",
+      "after": "res.sendFile('/path/to/file');",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/camelcase-sendfile"
+    },
+    "source": "Removed methods and properties > res.sendfile()"
+  },
+  {
+    "id": "bc-013",
+    "title": "res.sendFile() options: 'hidden' and 'from' replaced by 'dotfiles' and 'root'",
+    "description": "The hidden and from options for res.sendFile() are no longer supported in Express 5. Use dotfiles (set to 'allow' to serve hidden files/directories) and root instead. In Express 4 a hidden directory in the absolute path was served by default; in Express 5 it returns 404 unless dotfiles: 'allow' is set.",
+    "detection": {
+      "pattern": "res\\.sendFile\\s*\\([^)]*\\{[^}]*(hidden|[^r]from)\\s*:",
+      "note": "Search for res.sendFile( calls with an options object containing 'hidden' or 'from' keys"
+    },
+    "fix": {
+      "before": "res.sendFile(req.params.name, { hidden: true, from: '/uploads' });",
+      "after": "res.sendFile(req.params.name, { dotfiles: 'allow', root: '/uploads' });",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/sendfile-options. For absolute paths containing hidden directories (e.g. /var/www/app/.cache/index.html), also add dotfiles: 'allow' or use root so the hidden segment is not part of the evaluated path."
+    },
+    "source": "Removed methods and properties > res.sendFile() options"
+  },
+  {
+    "id": "bc-014",
+    "title": "express.static() options: 'hidden' and 'from' replaced by 'dotfiles' and 'root'",
+    "description": "The hidden and from options for express.static() are no longer supported in Express 5 (from was never documented but worked as an alias for root). Use dotfiles: 'allow' to serve hidden files/directories. The dotfiles check now applies to hidden directories in the path, not just hidden files. Requests to paths like /.well-known/... return 404 unless dotfiles: 'allow' is set.",
+    "detection": {
+      "pattern": "express\\.static\\s*\\([^)]*\\{[^}]*(hidden|[^r]from)\\s*:",
+      "note": "Search for express.static( calls with an options object containing 'hidden' or 'from' keys"
+    },
+    "fix": {
+      "before": "app.use(express.static('public', { hidden: true }));",
+      "after": "app.use(express.static('public', { dotfiles: 'allow' }));",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/static-dotfiles. If you serve .well-known (ACME/Let's Encrypt), add a dedicated route: app.use('/.well-known', express.static('public/.well-known', { dotfiles: 'allow' }));"
+    },
+    "source": "Removed methods and properties > express.static() options"
+  },
+  {
+    "id": "bc-015",
+    "title": "express.static.mime removed — use mime-types package directly",
+    "description": "In Express 5, mime is no longer an exported property of express.static. Code that accessed express.static.mime to look up MIME types will throw a TypeError. Use the mime-types npm package directly instead.",
+    "detection": {
+      "pattern": "express\\.static\\.mime",
+      "note": "Search for express.static.mime — any property access on express.static.mime"
+    },
+    "fix": {
+      "before": "const type = express.static.mime.lookup('json');",
+      "after": "const mime = require('mime-types');\nconst type = mime.lookup('json');",
+      "notes": "Automated codemod available: npx codemod@latest @expressjs/static-mime. Add 'mime-types' as a direct dependency: npm install mime-types"
+    },
+    "source": "Removed methods and properties > express.static.mime"
+  },
+  {
+    "id": "bc-016",
+    "title": "router.param(fn) single-function signature removed",
+    "description": "The router.param(fn) single-argument signature (used to modify the behaviour of router.param(name, fn)) has been deprecated since Express v4.11.0 and is completely removed in Express 5. This mirrors the removal of app.param(fn) (see bc-002).",
+    "detection": {
+      "pattern": "router\\.param\\s*\\(\\s*function|router\\.param\\s*\\(\\s*\\(",
+      "note": "Search for router.param( where the first argument is a function (not a string name)"
+    },
+    "fix": {
+      "before": "router.param(function(name, fn) {\n  // modify behaviour\n});",
+      "after": "// Register each param handler individually\nrouter.param('id', (req, res, next, value) => {\n  next();\n});",
+      "notes": "Refactor global param pre-processors into individual router.param(name, fn) calls."
+    },
+    "source": "Removed methods and properties > router.param(fn)"
+  },
+  {
+    "id": "bc-017",
+    "title": "Path route wildcard * must be named (/*splat syntax)",
+    "description": "In Express 5, the unnamed wildcard * in path strings is no longer supported. Wildcards must be named, following the behaviour of named parameters. Use /*splat (or any identifier) instead of /*. The wildcard captures path segments as an array in req.params.splat.",
+    "detection": {
+      "pattern": "(?:app|router)\\.[a-z]+\\s*\\(\\s*['\"`][^'\"`,]*\\/\\*[^a-zA-Z:{'\"`,]",
+      "note": "Search for route definitions (app.get, app.use, router.get, etc.) where the path contains /* not followed by a word character — e.g. '/*', '/api/*'"
+    },
+    "fix": {
+      "before": "app.get('/*', async (req, res) => {\n  res.send('ok');\n});",
+      "after": "app.get('/*splat', async (req, res) => {\n  res.send('ok');\n});\n// To also match root /, wrap in braces:\n// app.get('/{*splat}', ...)",
+      "notes": "req.params.splat will be an array of path segments. To also match the root path, use /{*splat}."
+    },
+    "source": "Changed > Path route matching syntax > Wildcard * must have a name"
+  },
+  {
+    "id": "bc-018",
+    "title": "Optional route parameter ? replaced by brace syntax",
+    "description": "The optional character ? in route path strings is no longer supported in Express 5. Use braces to wrap optional segments instead.",
+    "detection": {
+      "pattern": "(?:app|router)\\.[a-z]+\\s*\\(\\s*['\"`][^'\"`,]*:[a-zA-Z_]+\\?",
+      "note": "Search for route path strings containing :param? (a named param followed by a question mark)"
+    },
+    "fix": {
+      "before": "app.get('/:file.:ext?', async (req, res) => {\n  res.send('ok');\n});",
+      "after": "app.get('/:file{.:ext}', async (req, res) => {\n  res.send('ok');\n});",
+      "notes": "The braces make the entire segment (including the dot) optional. Unmatched optional params are now omitted from req.params entirely (not set to undefined)."
+    },
+    "source": "Changed > Path route matching syntax > Optional character ? no longer supported"
+  },
+  {
+    "id": "bc-019",
+    "title": "Regexp characters in route paths not supported",
+    "description": "Express 5 does not support regular expression characters in string route paths (e.g. [discussion|page] alternation). Use an array of path strings or a real RegExp route instead.",
+    "detection": {
+      "pattern": "(?:app|router)\\.[a-z]+\\s*\\(\\s*['\"`][^'\"`,]*[\\[\\(\\|][^'\"`,]*[\\]\\)]",
+      "note": "Search for route path strings containing regex metacharacters like [ ] ( ) |"
+    },
+    "fix": {
+      "before": "app.get('/[discussion|page]/:slug', async (req, res) => {\n  res.status(200).send('ok');\n});",
+      "after": "app.get(['/discussion/:slug', '/page/:slug'], async (req, res) => {\n  res.status(200).send('ok');\n});",
+      "notes": "Use an array of route strings, or a RegExp object (e.g. /^\\/discussion|page\\/([^/]+)$/) as the first argument."
+    },
+    "source": "Changed > Path route matching syntax > Regexp characters are not supported"
+  },
+  {
+    "id": "bc-020",
+    "title": "Reserved characters ( ) [ ] ? + ! must be escaped in route paths",
+    "description": "Express 5 reserves the characters ( ) [ ] ? + ! in route path strings to avoid confusion during upgrade. If your route paths contain these characters literally (not as regex), they must be escaped with a backslash.",
+    "detection": {
+      "pattern": "(?:app|router)\\.[a-z]+\\s*\\(\\s*['\"`][^'\"`,]*[\\(\\)\\[\\]\\?\\+\\!]",
+      "note": "Search for route path strings containing unescaped ( ) [ ] ? + ! characters"
+    },
+    "fix": {
+      "before": "app.get('/user(s)?', handler);",
+      "after": "app.get('/user\\\\(s\\\\)\\\\?', handler);\n// or use braces for optional: app.get('/user{s}', handler);",
+      "notes": "Review each occurrence carefully — some may be intentional regex use (see bc-019) that should instead be converted to an array of paths."
+    },
+    "source": "Changed > Path route matching syntax > Reserved characters"
+  },
+  {
+    "id": "bc-021",
+    "title": "Rejected promises from middleware/handlers automatically forwarded to error handler",
+    "description": "In Express 5, if a middleware or route handler returns a rejected promise (or is an async function that throws), the rejected value is automatically forwarded to the error-handling middleware as if next(err) were called. In Express 4, unhandled promise rejections in middleware were not automatically caught by Express — you had to add .catch(next) manually. Code that relies on the Express 4 behaviour (e.g. intentionally swallowing async errors) may behave differently.",
+    "detection": {
+      "pattern": "\\.then\\s*\\([^)]*\\)\\.catch\\s*\\(\\s*next\\s*\\)",
+      "note": "Search for .then(...).catch(next) patterns — these manual catch-and-forward chains are now unnecessary and can be simplified to async/await"
+    },
+    "fix": {
+      "before": "app.get('/user/:id', (req, res, next) => {\n  getUserById(req.params.id)\n    .then((user) => res.send(user))\n    .catch(next);\n});",
+      "after": "app.get('/user/:id', async (req, res) => {\n  const user = await getUserById(req.params.id);\n  res.send(user);\n});",
+      "notes": "This is an improvement, not just a breaking change. The change means any previously swallowed async errors will now reach the error handler. Audit async middleware for errors that were previously silently ignored."
+    },
+    "source": "Changed > Rejected promises handled from middleware and handlers"
+  },
+  {
+    "id": "bc-022",
+    "title": "express.urlencoded() extended option defaults to false",
+    "description": "In Express 5, the express.urlencoded() middleware now defaults extended to false (using the built-in querystring parser). In Express 4 it defaulted to true (using the qs library, which supports nested objects). Apps that rely on nested object parsing in URL-encoded bodies must now explicitly set extended: true.",
+    "detection": {
+      "pattern": "express\\.urlencoded\\s*\\(\\s*\\)",
+      "note": "Search for express.urlencoded() called with no arguments — these now implicitly use extended: false"
+    },
+    "fix": {
+      "before": "app.use(express.urlencoded());",
+      "after": "// If you need nested object support (qs parser):\napp.use(express.urlencoded({ extended: true }));\n// If simple key=value is sufficient:\napp.use(express.urlencoded({ extended: false }));",
+      "notes": "If you only parse flat key=value pairs, the default (extended: false) is safe and no change is needed. Only add extended: true if your app parses nested objects like user[name]=Alice."
+    },
+    "source": "Changed > express.urlencoded"
+  },
+  {
+    "id": "bc-023",
+    "title": "express.static dotfiles defaults to 'ignore' — hidden directories return 404",
+    "description": "In Express 5, the dotfiles option for express.static() now defaults to 'ignore'. In Express 4, dotfiles were served by default. Files inside directories that start with a dot (e.g. .well-known) will no longer be accessible and will return 404 Not Found. This can break functionality that depends on serving dot-directories, such as Android App Links, Apple Universal Links, and ACME/Let's Encrypt challenges.",
+    "detection": {
+      "pattern": "express\\.static\\s*\\(",
+      "note": "Search for ALL express.static( calls — any that serve .well-known or other dot-directories need dotfiles: 'allow'"
+    },
+    "fix": {
+      "before": "app.use(express.static('public'));",
+      "after": "// Option 1: allow all dotfiles globally\napp.use(express.static('public', { dotfiles: 'allow' }));\n\n// Option 2 (preferred): serve only the specific dot-directory explicitly\napp.use('/.well-known',\n  express.static('public/.well-known', { dotfiles: 'allow' }));\napp.use(express.static('public'));",
+      "notes": "This is the most likely silent-breakage in many apps. Audit all paths served by express.static for dot-directories."
+    },
+    "source": "Changed > express.static dotfiles"
+  },
+  {
+    "id": "bc-024",
+    "title": "router.param() no longer accepts an array of names",
+    "description": "In Express 4, router.param(name, fn) silently accepted an array of strings for name. In Express 5, passing anything other than a string throws TypeError: argument name must be a string. Note that app.param() still accepts an array of names.",
+    "detection": {
+      "pattern": "router\\.param\\s*\\(\\s*\\[",
+      "note": "Search for router.param( with an array literal as the first argument"
+    },
+    "fix": {
+      "before": "router.param(['id', 'page'], (req, res, next, value) => {\n  // ...\n});",
+      "after": "const loadParam = (req, res, next, value) => {\n  // ...\n};\nrouter.param('id', loadParam);\nrouter.param('page', loadParam);",
+      "notes": "Extract the handler into a named function and register it once per param name."
+    },
+    "source": "Changed > router.param() with an array of names"
+  },
+  {
+    "id": "bc-025",
+    "title": "app.listen() error events passed to callback instead of thrown",
+    "description": "In Express 5, if the server receives an error event (e.g. EADDRINUSE), the error is passed to the app.listen() callback instead of being thrown. In Express 4, such errors would be thrown. Code that does not handle errors in the listen callback may miss server startup errors.",
+    "detection": {
+      "pattern": "app\\.listen\\s*\\(",
+      "note": "Search for app.listen( — check whether the callback handles errors"
+    },
+    "fix": {
+      "before": "const server = app.listen(8080, '0.0.0.0', () => {\n  console.log(`Listening on ${JSON.stringify(server.address())}`);\n});",
+      "after": "const server = app.listen(8080, '0.0.0.0', (error) => {\n  if (error) {\n    throw error; // e.g. EADDRINUSE\n  }\n  console.log(`Listening on ${JSON.stringify(server.address())}`);\n});",
+      "notes": "Add an error parameter to the callback and handle it explicitly. Without handling, startup errors (port in use, permission denied) will be silently swallowed."
+    },
+    "source": "Changed > app.listen"
+  },
+  {
+    "id": "bc-026",
+    "title": "req.body is undefined when no body parser is used (was {} in Express 4)",
+    "description": "In Express 5, req.body returns undefined when the request body has not been parsed (no body-parser middleware applied). In Express 4, req.body defaulted to an empty object {}. Code that checks for req.body being falsy may behave differently.",
+    "detection": {
+      "pattern": "req\\.body",
+      "note": "Search for all req.body accesses — particularly checks like 'if (!req.body)' or 'req.body || {}' that may rely on the empty-object default"
+    },
+    "fix": {
+      "before": "// Express 4: req.body is {} when no parser is applied\nif (req.body.username) { ... }",
+      "after": "// Express 5: req.body is undefined when no parser is applied\nif (req.body && req.body.username) { ... }\n// or with optional chaining:\nif (req.body?.username) { ... }",
+      "notes": "This only affects code paths where body parsing middleware is not applied. Ensure express.json() or express.urlencoded() is registered before routes that read req.body."
+    },
+    "source": "Changed > req.body"
+  },
+  {
+    "id": "bc-027",
+    "title": "req.host now preserves port number",
+    "description": "In Express 4, req.host incorrectly stripped the port number if it was present in the Host header (e.g. 'example.com:3000' → 'example.com'). In Express 5, the port number is maintained. Code that assumed req.host would never contain a port may break.",
+    "detection": {
+      "pattern": "req\\.host\\b",
+      "note": "Search for req.host — check if your code assumes it never contains a port number"
+    },
+    "fix": {
+      "before": "// Express 4: req.host === 'example.com' (port stripped)\nconst redirect = `https://${req.host}/path`;",
+      "after": "// Express 5: req.host === 'example.com:3000' (port preserved)\n// Use req.hostname to always get just the hostname without port\nconst redirect = `https://${req.hostname}/path`;",
+      "notes": "Use req.hostname if you need the hostname without port (this was also available in Express 4). Use req.host only if you explicitly need host:port."
+    },
+    "source": "Changed > req.host"
+  },
+  {
+    "id": "bc-028",
+    "title": "req.params has null prototype for string paths; wildcard params are arrays",
+    "description": "In Express 5, when the route path is a string, req.params is an object with a null prototype (no Object.prototype methods). Additionally, wildcard parameters (e.g. /*splat) capture segments as an array instead of a single string. And unmatched optional params are omitted from req.params entirely (not set to '' or undefined as in Express 4).",
+    "detection": {
+      "pattern": "req\\.params\\b",
+      "note": "Search for req.params usage — check for: (1) prototype method calls (hasOwnProperty, etc.), (2) wildcard params treated as strings, (3) checks for undefined/empty string on optional params"
+    },
+    "fix": {
+      "before": "// Express 4: wildcard is a string\napp.get('/*', (req, res) => {\n  const path = req.params[0]; // e.g. 'foo/bar'\n});\n// Express 4: unmatched optional param is undefined\napp.get('/:file.:ext?', (req, res) => {\n  const ext = req.params.ext; // undefined if no ext\n});",
+      "after": "// Express 5: wildcard is an array\napp.get('/*splat', (req, res) => {\n  const segments = req.params.splat; // e.g. ['foo', 'bar']\n  const path = segments.join('/');\n});\n// Express 5: unmatched optional param is omitted\napp.get('/:file{.:ext}', (req, res) => {\n  const ext = req.params.ext; // omitted (not present on object) if no ext\n  const hasExt = 'ext' in req.params;\n});",
+      "notes": "Avoid calling Object.prototype methods (like hasOwnProperty) directly on req.params. Use Object.prototype.hasOwnProperty.call(req.params, key) or 'key' in req.params instead."
+    },
+    "source": "Changed > req.params"
+  },
+  {
+    "id": "bc-029",
+    "title": "req.query is a read-only getter; default parser changed to 'simple'",
+    "description": "In Express 5, req.query is no longer a writable property — it is a getter. Assigning to req.query throws an error. Additionally, the default query string parser has changed from 'extended' (qs library, supporting nested objects) to 'simple' (Node.js built-in querystring). Nested query objects like ?user[name]=Alice will no longer be parsed into nested objects by default.",
+    "detection": {
+      "pattern": "req\\.query\\s*=",
+      "note": "Search for assignment to req.query (req.query = ...) — these will throw in Express 5"
+    },
+    "fix": {
+      "before": "// Express 4: writable\nreq.query.page = 1;\n\n// Express 4: ?user[name]=Alice → { user: { name: 'Alice' } }\napp.use(express.query());",
+      "after": "// Express 5: read-only, cannot assign\n// Refactor to use local variables or attach to req directly:\nreq.parsedPage = 1;\n\n// Express 5: use 'extended' parser to restore nested object support\napp.set('query parser', 'extended');",
+      "notes": "To restore the Express 4 default query parsing behaviour, add app.set('query parser', 'extended') before your routes. To also support nested objects in the body, ensure express.urlencoded({ extended: true }) is used (see bc-022)."
+    },
+    "source": "Changed > req.query"
+  },
+  {
+    "id": "bc-030",
+    "title": "res.clearCookie() ignores maxAge and expires options",
+    "description": "In Express 5, res.clearCookie() ignores the maxAge and expires options provided by the caller. These options had no practical use when clearing cookies — a cleared cookie always expires immediately. If your code passes these options, they are silently ignored, which means cookie clearing should now work correctly.",
+    "detection": {
+      "pattern": "res\\.clearCookie\\s*\\([^)]*(?:maxAge|expires)\\s*:",
+      "note": "Search for res.clearCookie( calls with an options object containing maxAge or expires keys"
+    },
+    "fix": {
+      "before": "res.clearCookie('session', { maxAge: 0, expires: new Date(0) });",
+      "after": "res.clearCookie('session');",
+      "notes": "Simply remove the options object, or at least the maxAge and expires properties. Other options (path, domain, secure, httpOnly, sameSite) are still respected."
+    },
+    "source": "Changed > res.clearCookie"
+  },
+  {
+    "id": "bc-031",
+    "title": "res.status() only accepts integers in range 100–999",
+    "description": "In Express 5, res.status() only accepts integers in the range 100 to 999, following Node.js behaviour. Passing a value outside this range (e.g. 99 or 1000) or a non-integer throws an error. In Express 4, invalid values were silently accepted.",
+    "detection": {
+      "pattern": "res\\.status\\s*\\(\\s*(?:[0-9]{1,2}|[1-9][0-9]{3,})\\s*\\)",
+      "note": "Search for res.status( with a number argument less than 100 or 1000 or more — also watch for dynamically computed status codes"
+    },
+    "fix": {
+      "before": "res.status(99); // Throws in Express 5\nres.status(1000); // Throws in Express 5",
+      "after": "res.status(400); // Valid: 100–999 integers only",
+      "notes": "Audit any dynamic status codes (variables, computed values) to ensure they always fall within 100–999. Non-integer values also throw."
+    },
+    "source": "Changed > res.status"
+  },
+  {
+    "id": "bc-032",
+    "title": "res.vary() throws when field argument is missing",
+    "description": "In Express 5, calling res.vary() without a field argument throws an error. In Express 4, it issued a console warning but did not throw. Code that calls res.vary() with no arguments will now crash the request handler.",
+    "detection": {
+      "pattern": "res\\.vary\\s*\\(\\s*\\)",
+      "note": "Search for res.vary() called with no arguments"
+    },
+    "fix": {
+      "before": "res.vary(); // Console warning in Express 4, throws in Express 5",
+      "after": "res.vary('Accept');\n// or res.vary('Accept-Encoding')\n// Always provide the header field name",
+      "notes": "Determine which header the response varies on and pass it explicitly. If the call was a no-op or mistake, remove it."
+    },
+    "source": "Changed > res.vary"
+  },
+  {
+    "id": "bc-033",
+    "title": "express:router debug log namespace changed",
+    "description": "Router handling logic was extracted into a separate 'router' package in Express 5. As a result, the debug log namespace for router events has changed. The old DEBUG=express:router* environment variable no longer captures router-level logs; you must also include the new router namespaces.",
+    "detection": {
+      "pattern": "DEBUG=express:\\*|DEBUG=express:router",
+      "note": "Search for DEBUG environment variable settings in start scripts, .env files, or CI configuration containing 'express:router' or 'express:*'"
+    },
+    "fix": {
+      "before": "DEBUG=express:* node index.js",
+      "after": "DEBUG=express:*,router,router:* node index.js",
+      "notes": "Update any npm scripts, Docker entrypoints, CI environment variables, or .env files that set the DEBUG variable for Express router logging."
+    },
+    "source": "Removed methods and properties > express:router debug logs"
+  }
+]

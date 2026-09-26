@@ -1,0 +1,90 @@
+[
+  {
+    "id": "bc-001",
+    "title": "app.del() removed",
+    "description": "Express 5 removes app.del(). Use app.delete() instead.",
+    "detection": { "pattern": "\\.del\\s*\\(", "note": "Search for .del( — any call to app.del() or router.del()" },
+    "fix": {
+      "before": "app.del('/tasks/:id', deleteTask);",
+      "after": "app.delete('/tasks/:id', deleteTask);"
+    },
+    "source": "Removed methods and properties > app.del()"
+  },
+  {
+    "id": "bc-005",
+    "title": "req.param(name) removed",
+    "description": "req.param() has been removed. Use req.params, req.body, or req.query explicitly.",
+    "detection": { "pattern": "req\\.param\\s*\\(", "note": "Search for req.param( calls" },
+    "fix": {
+      "before": "const id = req.param('id');",
+      "after": "const id = req.params.id;"
+    },
+    "source": "Removed methods and properties > req.param(name)"
+  },
+  {
+    "id": "bc-003",
+    "title": "Pluralized method names removed",
+    "description": "req.acceptsCharset() is removed. Use req.acceptsCharsets() instead.",
+    "detection": { "pattern": "req\\.acceptsCharset\\b|req\\.acceptsEncoding\\b|req\\.acceptsLanguage\\b", "note": "Search for singular forms of these three request methods" },
+    "fix": {
+      "before": "if (req.acceptsCharset('utf-8')) { ... }",
+      "after": "if (req.acceptsCharsets('utf-8')) { ... }"
+    },
+    "source": "Removed methods and properties > Pluralized method names"
+  },
+  {
+    "id": "bc-006",
+    "title": "res.json(obj, status) signature removed",
+    "description": "res.json(obj, status) is no longer supported. Use res.status(code).json(obj).",
+    "detection": { "pattern": "res\\.json\\s*\\([^)]+,\\s*\\d{3}\\s*\\)", "note": "Search for res.json( with a numeric status code as second argument" },
+    "fix": {
+      "before": "res.json({ user }, 201);",
+      "after": "res.status(201).json({ user });"
+    },
+    "source": "Removed methods and properties > res.json(obj, status)"
+  },
+  {
+    "id": "bc-009",
+    "title": "res.redirect('back') removed",
+    "description": "The magic string 'back' is no longer supported. Use the Referer header with a fallback.",
+    "detection": { "pattern": "res\\.redirect\\s*\\(\\s*['\"]back['\"]\\s*\\)", "note": "Search for res.redirect('back')" },
+    "fix": {
+      "before": "res.redirect('back');",
+      "after": "res.redirect(req.get('Referrer') || '/');"
+    },
+    "source": "Removed methods and properties > res.redirect('back') and res.location('back')"
+  },
+  {
+    "id": "bc-010",
+    "title": "res.send(body, status) argument order changed",
+    "description": "res.send(obj, status) is removed. Use res.status(code).send(obj).",
+    "detection": { "pattern": "res\\.send\\s*\\([^)]+,\\s*\\d{3}\\s*\\)", "note": "Search for res.send( with a numeric status code as second argument" },
+    "fix": {
+      "before": "res.send({ data: tasks }, 200);",
+      "after": "res.status(200).send({ data: tasks });"
+    },
+    "source": "Removed methods and properties > res.send(body, status)"
+  },
+  {
+    "id": "bc-014",
+    "title": "express.static() 'hidden' option replaced by 'dotfiles'",
+    "description": "The 'hidden' option for express.static() is no longer supported. Use dotfiles: 'allow' instead.",
+    "detection": { "pattern": "express\\.static\\s*\\([^)]*\\{[^}]*(hidden)\\s*:", "note": "Search for express.static( with 'hidden' in options" },
+    "fix": {
+      "before": "express.static('public', { hidden: true })",
+      "after": "express.static('public', { dotfiles: 'allow' })"
+    },
+    "source": "Removed methods and properties > express.static() options"
+  },
+  {
+    "id": "bc-025",
+    "title": "app.listen() errors passed to callback",
+    "description": "Server errors are now passed to the app.listen callback instead of being thrown.",
+    "detection": { "pattern": "app\\.listen\\s*\\(", "note": "Search for app.listen( — check whether the callback handles errors" },
+    "fix": {
+      "before": "app.listen(3000, () => { console.log('Listening'); });",
+      "after": "app.listen(3000, (error) => { if (error) throw error; console.log('Listening'); });"
+    },
+    "source": "Changed > app.listen"
+  }
+]

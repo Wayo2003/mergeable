@@ -1,0 +1,72 @@
+diff --git a/src/routes/tasks.js b/src/routes/tasks.js
+index a3f2c11..b7e4d02 100644
+--- a/src/routes/tasks.js
++++ b/src/routes/tasks.js
+@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
+ });
+ 
+-app.del('/tasks/:id', async (req, res) => {
++app.delete('/tasks/:id', async (req, res) => {
+   const task = await Task.findByIdAndDelete(req.params.id);
+   res.json({ deleted: task });
+ });
+@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
+ 
+ router.get('/:id', async (req, res) => {
+-  const id = req.param('id');
++  const id = req.params.id;
+   const task = await Task.findById(id);
+   res.json(task);
+ });
+@@ -86,7 +86,7 @@ router.get('/', async (req, res) => {
+   const tasks = await Task.find({ userId: req.user.id });
+-  res.send({ data: tasks }, 200);
++  res.status(200).send({ data: tasks });
+ });
+diff --git a/src/routes/users.js b/src/routes/users.js
+index c1d8e44..f9a2b01 100644
+--- a/src/routes/users.js
++++ b/src/routes/users.js
+@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
+   const user = await User.create(req.body);
+-  res.json({ user }, 201);
++  res.status(201).json({ user });
+ });
+ 
+@@ -53,7 +53,7 @@ router.get('/profile', async (req, res) => {
+-  if (req.acceptsCharset('utf-8')) {
++  if (req.acceptsCharsets('utf-8')) {
+     res.set('Content-Type', 'application/json; charset=utf-8');
+   }
+diff --git a/src/routes/auth.js b/src/routes/auth.js
+index 9e1a3f2..d4c6801 100644
+--- a/src/routes/auth.js
++++ b/src/routes/auth.js
+@@ -65,7 +65,7 @@ router.get('/logout', (req, res) => {
+   req.session.destroy();
+-  res.redirect('back');
++  res.redirect(req.get('Referrer') || '/');
+ });
+diff --git a/src/middleware/static.js b/src/middleware/static.js
+index 7b3c041..e2f1d88 100644
+--- a/src/middleware/static.js
++++ b/src/middleware/static.js
+@@ -6,7 +6,7 @@ const express = require('express');
+ 
+-app.use(express.static('public', { hidden: true }));
++app.use(express.static('public', { dotfiles: 'allow' }));
+diff --git a/src/app.js b/src/app.js
+index 1fa2309..2c4a801 100644
+--- a/src/app.js
++++ b/src/app.js
+@@ -16,5 +16,8 @@ app.use('/api/tasks', taskRoutes);
+ app.use('/api/users', userRoutes);
+ 
+-app.listen(3000, () => {
+-  console.log('TaskHub API listening on port 3000');
++app.listen(3000, (error) => {
++  if (error) {
++    throw error;
++  }
++  console.log('TaskHub API listening on port 3000');
+ });

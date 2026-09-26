@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upgrade Dossier · {{PACKAGE}} {{FROM_VERSION}} → {{TO_VERSION}}</title>
+<style>
+/* ── Reset & tokens ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #ffffff;
+  --surface:   #f7f8fa;
+  --border:    #e5e7eb;
+  --text:      #1f2328;
+  --muted:     #57606a;
+  --accent:    #3b82d4;
+  --green:     #16a34a;
+  --green-bg:  #dcfce7;
+  --green-bd:  #86efac;
+  --red:       #dc2626;
+  --red-bg:    #fee2e2;
+  --red-bd:    #fca5a5;
+  --yellow:    #b45309;
+  --yellow-bg: #fef3c7;
+  --yellow-bd: #fcd34d;
+  --purple:    #7c3aed;
+  --purple-bg: #ede9fe;
+  --radius:    6px;
+  --shadow:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --muted:     #8b949e;
+    --accent:    #58a6ff;
+    --green:     #3fb950;
+    --green-bg:  #0d2a18;
+    --green-bd:  #238636;
+    --red:       #f85149;
+    --red-bg:    #2d1117;
+    --red-bd:    #b91c1c;
+    --yellow:    #d29922;
+    --yellow-bg: #2d2000;
+    --yellow-bd: #9e6a03;
+    --purple:    #a78bfa;
+    --purple-bg: #1e1635;
+    --purple-bd: #6d28d9;
+    --shadow:    0 1px 3px rgba(0,0,0,.4);
+  }
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  padding: 32px 16px 64px;
+}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.container { max-width: 820px; margin: 0 auto; }
+
+/* ── Utility ─────────────────────────────────────────────────── */
+.sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0); }
+code, pre {
+  font-family: ui-monospace, "Cascadia Code", "Fira Code", monospace;
+  font-size: 12.5px;
+}
+pre {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  overflow-x: auto;
+  line-height: 1.5;
+}
+code { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 1px 5px; }
+pre code { background: none; border: none; padding: 0; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ── Header ─────────────────────────────────────────────────── */
+.dossier-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.dossier-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -.3px;
+  margin-bottom: 4px;
+}
+.dossier-header .meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+.dossier-header .meta span + span::before { content: " · "; }
+
+/* ── Verdict banner ─────────────────────────────────────────── */
+.verdict {
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 1px solid;
+}
+.verdict-green { background: var(--green-bg); border-color: var(--green-bd); }
+.verdict-red   { background: var(--red-bg);   border-color: var(--red-bd); }
+
+.verdict-left { display: flex; flex-direction: column; gap: 4px; }
+.verdict-label {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.verdict-green .verdict-label { color: var(--green); }
+.verdict-red   .verdict-label { color: var(--red); }
+
+.verdict-sub { font-size: 13px; color: var(--muted); }
+
+.verdict-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.pill-cve  { background: var(--red-bg);    border-color: var(--red-bd);    color: var(--red);    }
+.pill-sev-critical { background: #450a0a;  border-color: var(--red-bd);    color: #fca5a5; }
+.pill-sev-high     { background: var(--red-bg); border-color: var(--red-bd); color: var(--red); }
+.pill-sev-medium   { background: var(--yellow-bg); border-color: var(--yellow-bd); color: var(--yellow); }
+.pill-sev-low      { background: var(--green-bg);  border-color: var(--green-bd);  color: var(--green);  }
+.pill-merge { background: var(--green-bg); border-color: var(--green-bd); color: var(--green); font-size: 13px; padding: 6px 14px; }
+.pill-warn  { background: var(--red-bg);   border-color: var(--red-bd);   color: var(--red);   font-size: 13px; padding: 6px 14px; }
+
+/* ── Test bar ────────────────────────────────────────────────── */
+.section { margin-bottom: 28px; }
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.test-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.test-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.test-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.test-bar-wrap { position: relative; height: 10px; background: var(--border); border-radius: 5px; margin-bottom: 8px; overflow: hidden; }
+.test-bar-pass { position: absolute; left: 0; top: 0; height: 100%; background: var(--green); border-radius: 5px; transition: width .3s; }
+.test-bar-fail { position: absolute; right: 0; top: 0; height: 100%; background: var(--red); border-radius: 5px; }
+.test-counts { display: flex; gap: 14px; font-size: 13px; font-weight: 600; }
+.tc-pass { color: var(--green); }
+.tc-fail { color: var(--red); }
+
+/* ── Stats row ───────────────────────────────────────────────── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.stat-number { font-size: 28px; font-weight: 800; line-height: 1.1; color: var(--accent); }
+.stat-label  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── CVE table ───────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--muted);
+}
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface); }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+.badge-critical { background: #450a0a; color: #fca5a5; }
+.badge-high     { background: var(--red-bg);    color: var(--red); }
+.badge-medium   { background: var(--yellow-bg); color: var(--yellow); }
+.badge-low      { background: var(--green-bg);  color: var(--green); }
+.badge-fixed    { background: var(--green-bg);  color: var(--green); }
+
+/* ── Breaking changes accordion ─────────────────────────────── */
+.bc-list { display: flex; flex-direction: column; gap: 6px; }
+
+details.bc-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+details.bc-item[open] { border-color: var(--accent); }
+
+summary.bc-summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+summary.bc-summary::-webkit-details-marker { display: none; }
+summary.bc-summary::before {
+  content: "▶";
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform .15s;
+}
+details[open] summary.bc-summary::before { transform: rotate(90deg); }
+
+.bc-id { font-size: 11px; font-weight: 700; color: var(--muted); font-family: ui-monospace, monospace; }
+.bc-title-text { font-size: 13px; font-weight: 600; }
+.bc-files-count { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+.bc-body { padding: 0 14px 14px; }
+.bc-description { font-size: 13px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
+.bc-sub-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  margin-top: 10px;
+}
+
+.files-list { display: flex; flex-direction: column; gap: 4px; }
+.file-item {
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: var(--text);
+}
+
+.diff-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.diff-block .diff-line { padding: 1px 10px; white-space: pre; }
+.diff-line-add  { background: rgba(22,163,74,.12);  color: var(--green); }
+.diff-line-del  { background: rgba(220,38,38,.12);  color: var(--red); }
+.diff-line-meta { background: var(--surface); color: var(--muted); }
+
+/* ── Residual risk ───────────────────────────────────────────── */
+.risk-box {
+  background: var(--yellow-bg);
+  border: 1px solid var(--yellow-bd);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+}
+
+/* ── Checklist ───────────────────────────────────────────────── */
+.checklist { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.checklist li::before {
+  content: "☐";
+  font-size: 15px;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.dossier-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 540px) {
+  .test-comparison { grid-template-columns: 1fr; }
+  .verdict { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── Header ───────────────────────────────────────────────── -->
+  <header class="dossier-header">
+    <h1>Upgrade Dossier · <code>{{PACKAGE}}</code> {{FROM_VERSION}} → {{TO_VERSION}}</h1>
+    <div class="meta">
+      <span>Run <code>{{RUN_ID}}</code></span>
+      <span>Generated {{GENERATED_AT}}</span>
+    </div>
+  </header>
+
+  <!-- ── Verdict banner ───────────────────────────────────────── -->
+  <div class="verdict {{VERDICT_CLASS}}">
+    <div class="verdict-left">
+      <div class="verdict-label">
+        {{VERDICT_ICON}}
+        {{VERDICT_LABEL}}
+      </div>
+      <div class="verdict-sub">{{VERDICT_SUB}}</div>
+    </div>
+    <div class="verdict-pills">
+      <span class="pill pill-cve">{{CVES_CLOSED}} CVE{{CVES_CLOSED_PLURAL}} closed</span>
+      <span class="pill pill-sev-{{MAX_SEVERITY_LC}}">{{MAX_SEVERITY}} severity</span>
+      {{VERDICT_BADGE}}
+    </div>
+  </div>
+
+  <!-- ── Stats row ─────────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-number">{{CALL_SITES_FIXED}}</div>
+      <div class="stat-label">Call sites fixed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{FILES_TOUCHED}}</div>
+      <div class="stat-label">Files touched</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{BC_HANDLED}}</div>
+      <div class="stat-label">Breaking changes handled</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">{{DURATION_MIN}}<span style="font-size:16px;font-weight:400"> min</span></div>
+      <div class="stat-label">Total time</div>
+    </div>
+  </div>
+
+  <!-- ── Test bar ──────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Test results</div>
+    <div class="test-comparison">
+      <div class="test-card">
+        <div class="test-card-label">Before upgrade</div>
+        <div class="test-bar-wrap">
+          <div class="test-bar-pass" style="width:{{TESTS_BEFORE_PASS_PCT}}%"></div>
+          <div class="test-bar-fail" style="width:{{TESTS_BEFORE_FAIL_PCT}}%"></div>
+        </div>
+        <div class="test-counts">
+          <span class="tc-pass">✓ {{TESTS_BEFORE_PASS}} passing</span>
+          <span class="tc-fail">✗ {{TESTS_BEFORE_FAIL}} failing</span>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="test-card-label">After upgrade</div>
+        <div class="test-bar-wrap">
+          <div class="test-bar-pass" style="width:{{TESTS_AFTER_PASS_PCT}}%"></div>
+          <div class="test-bar-fail" style="width:{{TESTS_AFTER_FAIL_PCT}}%"></div>
+        </div>
+        <div class="test-counts">
+          <span class="tc-pass">✓ {{TESTS_AFTER_PASS}} passing</span>
+          <span class="tc-fail">✗ {{TESTS_AFTER_FAIL}} failing</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CVE table ─────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Vulnerabilities closed</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Aliases</th>
+            <th>Severity</th>
+            <th>Summary</th>
+            <th>Fixed in</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{CVE_ROWS}}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Breaking changes accordion ───────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Breaking changes handled ({{BC_HANDLED}})</div>
+    <div class="bc-list">
+      {{BC_ROWS}}
+    </div>
+  </div>
+
+  <!-- ── Residual risk ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Residual risk</div>
+    <div class="risk-box">{{RESIDUAL_RISK}}</div>
+  </div>
+
+  <!-- ── Reviewer checklist ────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-title">Reviewer checklist</div>
+    <ul class="checklist">
+      {{CHECKLIST_ITEMS}}
+    </ul>
+  </div>
+
+  <!-- ── Footer ───────────────────────────────────────────────── -->
+  <footer class="dossier-footer">
+    Generated by <strong>Mergeable</strong> on <strong>IBM Bob</strong>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+{
+  "package": "express",
+  "fromVersion": "4.21.2",
+  "toVersion": "5.1.0",
+  "ecosystem": "npm",
+  "vulnerabilities": [
+    {
+      "id": "GHSA-rv95-896h-c2vc",
+      "cveAliases": ["CVE-2024-43796"],
+      "severity": "MEDIUM",
+      "cvssScore": 5.0,
+      "summary": "express vulnerable to XSS via response.redirect()",
+      "fixedIn": "4.20.0",
+      "affected": "< 4.20.0",
+      "url": "https://osv.dev/vulnerability/GHSA-rv95-896h-c2vc"
+    },
+    {
+      "id": "GHSA-qw6h-vgh9-j6wx",
+      "cveAliases": ["CVE-2024-45590"],
+      "severity": "HIGH",
+      "cvssScore": 7.5,
+      "summary": "body-parser vulnerable to denial of service when url encoding is enabled",
+      "fixedIn": "1.20.3",
+      "affected": "< 1.20.3",
+      "url": "https://osv.dev/vulnerability/GHSA-qw6h-vgh9-j6wx"
+    },
+    {
+      "id": "GHSA-3xgq-45jj-v275",
+      "cveAliases": ["CVE-2024-43799"],
+      "severity": "MEDIUM",
+      "cvssScore": 5.0,
+      "summary": "serve-static vulnerable to template injection via redirect",
+      "fixedIn": "1.16.0",
+      "affected": "< 1.16.0",
+      "url": "https://osv.dev/vulnerability/GHSA-3xgq-45jj-v275"
+    }
+  ],
+  "exposure": {
+    "verdict": "EXPOSED",
+    "reasoning": "The application uses express.static() to serve files and calls res.redirect() in multiple routes. Both affected code paths are reachable from unauthenticated requests.",
+    "usageSites": [
+      { "file": "src/app.js",       "line": 12,  "symbol": "express.static",   "snippet": "app.use(express.static('public'));" },
+      { "file": "src/app.js",       "line": 18,  "symbol": "app.listen",        "snippet": "app.listen(3000);" },
+      { "file": "src/routes/auth.js","line": 34,  "symbol": "res.redirect",      "snippet": "res.redirect('/dashboard');" },
+      { "file": "src/routes/auth.js","line": 67,  "symbol": "res.redirect",      "snippet": "res.redirect('back');" },
+      { "file": "src/routes/tasks.js","line": 22, "symbol": "app.del",           "snippet": "app.del('/tasks/:id', deleteTask);" },
+      { "file": "src/routes/tasks.js","line": 45, "symbol": "req.param",         "snippet": "const id = req.param('id');" },
+      { "file": "src/routes/tasks.js","line": 88, "symbol": "res.send",          "snippet": "res.send({ data: tasks }, 200);" },
+      { "file": "src/routes/users.js","line": 31, "symbol": "res.json",          "snippet": "res.json({ user }, 201);" },
+      { "file": "src/routes/users.js","line": 55, "symbol": "req.acceptsCharset","snippet": "if (req.acceptsCharset('utf-8')) {" },
+      { "file": "src/middleware/static.js","line": 8, "symbol": "express.static","snippet": "express.static('public', { hidden: true })" }
+    ]
+  }
+}

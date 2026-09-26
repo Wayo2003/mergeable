@@ -1,0 +1,33 @@
+{
+  "timestamp": "2024-10-26T14:30:00.000Z",
+  "passed": 18,
+  "failed": 6,
+  "total": 24,
+  "durationMs": 4823,
+  "failures": [
+    {
+      "test": "DELETE /tasks/:id returns 200",
+      "message": "TypeError: app.del is not a function"
+    },
+    {
+      "test": "POST /tasks returns task with id",
+      "message": "TypeError: req.param is not a function"
+    },
+    {
+      "test": "GET /tasks returns 200 with data",
+      "message": "Error: Expected status 200, got 500 - res.send() second arg not supported"
+    },
+    {
+      "test": "POST /users creates user with 201",
+      "message": "Error: res.json() called with (obj, status) - status must be set first"
+    },
+    {
+      "test": "GET /auth logout redirects back",
+      "message": "Error: res.redirect('back') is not supported in Express 5"
+    },
+    {
+      "test": "GET /static/.well-known/acme serves file",
+      "message": "Error: Cannot GET /.well-known/acme-challenge/token — 404 (dotfiles default changed)"
+    }
+  ]
+}

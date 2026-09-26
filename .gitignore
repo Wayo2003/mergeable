@@ -4,3 +4,4 @@ dist/
 .mergeable/
 
 mcp-server/smoke.mjs
+docs/sources/pdf_pages/
