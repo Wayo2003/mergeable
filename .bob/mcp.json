@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "mergeable": {
+      "command": "node",
+      "args": [
+        "c:\\Users\\AlvaroCunadoMoya\\Documents\\Hackaton\\mergeable\\mcp-server\\dist\\index.js"
+      ]
+    }
+  }
+}

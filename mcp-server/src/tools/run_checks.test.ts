@@ -64,6 +64,18 @@ describe('runChecks', () => {
     });
   }
 
+  it('spawns jest with appropriate binary and options depending on platform', async () => {
+    mockSuccess(JEST_PASS_JSON);
+    await runChecks({ root: process.cwd() });
+    expect(execFileMock).toHaveBeenCalled();
+    const [spawnedBin, args, options] = execFileMock.mock.calls[0];
+    if (process.platform === 'win32') {
+      expect(spawnedBin).toMatch(/jest(\.cmd)?$/);
+      expect((options as childProcess.ExecFileOptions).shell).toBe(true);
+    }
+    expect(args).toEqual(expect.arrayContaining(['--json', '--forceExit']));
+  });
+
   it('returns passed count with no failures when all tests pass', async () => {
     mockSuccess(JEST_PASS_JSON);
     const result = await runChecks({ root: process.cwd() });

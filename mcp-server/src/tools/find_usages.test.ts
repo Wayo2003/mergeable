@@ -22,6 +22,15 @@ describe('find_usages — express in demo-target', () => {
       expect(u.line).toBeGreaterThan(0);
       expect(typeof u.symbol).toBe('string');
       expect(typeof u.snippet).toBe('string');
+      expect(u.file).not.toContain('\\');
+    }
+  });
+
+  it('returns forward-slash relative paths', () => {
+    const filesWithSubdirs = usages.filter((u) => u.file.includes('/'));
+    expect(filesWithSubdirs.length).toBeGreaterThan(0);
+    for (const u of filesWithSubdirs) {
+      expect(u.file).toMatch(/^[^\\:]+(\/[^\\:]+)+$/);
     }
   });
 

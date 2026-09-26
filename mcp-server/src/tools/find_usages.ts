@@ -75,7 +75,7 @@ function collectFiles(dir: string): string[] {
 function analyzeFile(file: string, pkg: string, root: string): UsageEntry[] {
   const src = fs.readFileSync(file, 'utf-8');
   const lines = src.split('\n');
-  const relFile = path.relative(root, file);
+  const relFile = path.relative(root, file).split(path.sep).join('/');
 
   let ast;
   try {

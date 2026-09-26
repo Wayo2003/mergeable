@@ -29,11 +29,22 @@ export async function runChecks(input: RunChecksInput): Promise<RunChecksResult>
     throw new Error(`Directory not found: ${absRoot}`);
   }
 
-  // Prefer local jest binary
-  const localJest = path.join(absRoot, 'node_modules', '.bin', 'jest');
-  const jestBin = fs.existsSync(localJest) ? localJest : 'npx';
+  // Prefer local jest binary (on Windows, node_modules/.bin binaries have .cmd extension)
+  const isWindows = process.platform === 'win32';
+  const candidateBins = isWindows
+    ? [
+        path.join(absRoot, 'node_modules', '.bin', 'jest.cmd'),
+        path.join(absRoot, 'node_modules', '.bin', 'jest'),
+      ]
+    : [
+        path.join(absRoot, 'node_modules', '.bin', 'jest'),
+        path.join(absRoot, 'node_modules', '.bin', 'jest.cmd'),
+      ];
+
+  const localJest = candidateBins.find((bin) => fs.existsSync(bin));
+  const jestBin = localJest || (isWindows ? 'npx.cmd' : 'npx');
   const jestArgs =
-    jestBin === 'npx'
+    !localJest
       ? ['jest', '--json', '--forceExit', '--passWithNoTests']
       : ['--json', '--forceExit', '--passWithNoTests'];
 
@@ -44,6 +55,7 @@ export async function runChecks(input: RunChecksInput): Promise<RunChecksResult>
   try {
     const result = await execFileAsync(jestBin, jestArgs, {
       cwd: absRoot,
+      shell: isWindows,
       maxBuffer: 20 * 1024 * 1024, // 20 MB
     });
     stdout = result.stdout;
